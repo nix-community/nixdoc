@@ -1,3 +1,11 @@
+//! This tool generates DocBook XML from a Nix file defining library
+//! functions, such as the files in `lib/` in the nixpkgs repository.
+//!
+//! TODO:
+//! * extract function argument names
+//! * extract line number & add it to generated output
+//! * figure out how to specify examples (& leading whitespace?!)
+
 use failure::Error;
 use rnix::parser::{ASTNode, Data};
 use rnix::tokenizer::Meta;
@@ -58,7 +66,7 @@ struct Parameter {
 /// Represents a single manual section describing a library function.
 #[derive(Debug)]
 struct ManualEntry {
-    /// Name of the ... (TODO: Word for this? attrsets, strings, trivial etc)
+    /// Name of the function category (e.g. 'strings', 'trivial', 'attrsets')
     category: String,
 
     /// Name of the section (used as the title)
@@ -68,8 +76,12 @@ struct ManualEntry {
     /// type signature in any way.
     fn_type: Option<String>,
 
-    /// Primary description of the entry.
-    description: String, // TODO
+    /// Primary description of the entry. Each entry is written as a
+    /// separate paragraph.
+    description: Vec<String>,
+
+    /// Usage example for the entry.
+    example: Option<String>,
 
     /// Parameters of the function
     parameters: Vec<Parameter>,
@@ -102,9 +114,34 @@ impl ManualEntry {
 
         // Primary doc string
         // TODO: Split paragraphs?
-        w.write(XmlEvent::start_element("para"))?;
-        w.write(XmlEvent::characters(&self.description))?;
-        w.write(XmlEvent::end_element())?;
+        for paragraph in &self.description {
+            w.write(XmlEvent::start_element("para"))?;
+            w.write(XmlEvent::characters(paragraph))?;
+            w.write(XmlEvent::end_element())?;
+        }
+
+        // Example program listing (if applicable)
+        //
+        // TODO: In grhmc's version there are multiple (named)
+        // examples, how can this be achieved automatically?
+        if let Some(example) = &self.example {
+            w.write(XmlEvent::start_element("example"))?;
+
+            w.write(XmlEvent::start_element("title"))?;
+
+            w.write(XmlEvent::start_element("function"))?;
+            w.write(XmlEvent::characters(ident.as_str()))?;
+            w.write(XmlEvent::end_element())?;
+
+            w.write(XmlEvent::characters(" usage example"))?;
+            w.write(XmlEvent::end_element())?;
+
+            w.write(XmlEvent::start_element("programlisting"))?;
+            w.write(XmlEvent::cdata(example))?;
+            w.write(XmlEvent::end_element())?;
+
+            w.write(XmlEvent::end_element())?;
+        }
 
         // </section>
         w.write(XmlEvent::end_element())?;
@@ -203,8 +240,12 @@ fn main() {
         .map(|d| ManualEntry {
             category: opts.category.clone(),
             name: d.name,
-            description: d.comment.doc,
+            description: d.comment.doc
+                .split("\n\n")
+                .map(|s| s.to_string())
+                .collect(),
             fn_type: d.comment.doc_type,
+            example: d.comment.example,
             parameters: vec![],
         })
         .collect();
