@@ -1,9 +1,21 @@
-use rnix;
-use rnix::parser::{ASTNode, ASTKind, Arena, NodeId, Data};
+#[macro_use] extern crate structopt;
+
+use rnix::parser::{ASTNode, Data};
 use rnix::tokenizer::Meta;
-use std::fs;
 use rnix::tokenizer::Trivia;
-use regex::Regex;
+use rnix;
+use std::fs;
+use std::path::PathBuf;
+use structopt::StructOpt;
+
+/// Command line arguments for nixdoc
+#[derive(Debug, StructOpt)]
+#[structopt(name = "nixdoc", about = "Generate Docbook from Nix library functions")]
+struct Options {
+    /// Nix file to process.
+    #[structopt(short = "f", long = "file", parse(from_os_str))]
+    file: PathBuf,
+}
 
 #[derive(Debug)]
 struct DocComment {
@@ -45,6 +57,8 @@ struct ManualEntry {
     /// Primary description of the entry.
     description: String, // TODO
 
+    /// Parameters of the function
+    parameters: Vec<Parameter>,
 }
 
 /// Retrieve documentation comments. For now only multiline comments
@@ -128,7 +142,8 @@ fn parse_doc_comment(raw: &str) -> DocComment {
 }
 
 fn main() {
-    let src = fs::read_to_string("/home/vincent/source/nixpkgs/lib/trivial.nix").unwrap();
+    let opts = Options::from_args();
+    let src = fs::read_to_string(opts.file).unwrap();
     let nix = rnix::parse(&src).unwrap();
 
     let doc_items: Vec<DocItem> = nix.arena.into_iter()
