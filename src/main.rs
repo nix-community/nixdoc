@@ -1,13 +1,13 @@
+use failure::Error;
 use rnix::parser::{ASTNode, Data};
 use rnix::tokenizer::Meta;
 use rnix::tokenizer::Trivia;
 use rnix;
 use std::fs;
+use std::io::{self, Write};
 use std::path::PathBuf;
 use structopt::StructOpt;
-use std::io::{self, Write};
 use xml::writer::{EventWriter, EmitterConfig, XmlEvent};
-use failure::Error;
 
 type Result<T> = std::result::Result<T, Error>;
 
@@ -18,6 +18,14 @@ struct Options {
     /// Nix file to process.
     #[structopt(short = "f", long = "file", parse(from_os_str))]
     file: PathBuf,
+
+    /// Name of the function category (e.g. 'strings', 'attrsets').
+    #[structopt(short = "c", long = "category")]
+    category: String,
+
+    /// Description of the function category.
+    #[structopt(short = "d", long = "description")]
+    description: String,
 }
 
 #[derive(Debug)]
@@ -187,13 +195,13 @@ fn parse_doc_comment(raw: &str) -> DocComment {
 
 fn main() {
     let opts = Options::from_args();
-    let src = fs::read_to_string(opts.file).unwrap();
+    let src = fs::read_to_string(&opts.file).unwrap();
     let nix = rnix::parse(&src).unwrap();
 
     let entries: Vec<ManualEntry> = nix.arena.into_iter()
         .filter_map(retrieve_doc_item)
         .map(|d| ManualEntry {
-            category: "foo".into(),
+            category: opts.category.clone(),
             name: d.name,
             description: d.comment.doc,
             fn_type: d.comment.doc_type,
@@ -205,11 +213,21 @@ fn main() {
         .perform_indent(true)
         .create_writer(io::stdout());
 
+    writer.write(
+        XmlEvent::start_element("section")
+            .attr("xmlns", "http://docbook.org/ns/docbook")
+            .attr("xmlns:xlink", "http://www.w3.org/1999/xlink")
+            .attr("xmlns:xi", "http://www.w3.org/2001/XInclude")
+            .attr("xml:id", format!("sec-functions-library-{}", opts.category).as_str()))
+        .unwrap();
+
+    writer.write(XmlEvent::start_element("title")).unwrap();
+    writer.write(XmlEvent::characters(&opts.description)).unwrap();
+    writer.write(XmlEvent::end_element()).unwrap();
+
     for entry in entries {
         entry.write_section_xml(&mut writer).expect("Failed to write section")
     }
 
-    // for doc_item in doc_items {
-    //     println!("Item: {}\nDoc: {:#?}", doc_item.name, doc_item.comment)
-    // }
+    writer.write(XmlEvent::end_element()).unwrap();
 }
