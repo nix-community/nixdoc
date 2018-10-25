@@ -1,5 +1,3 @@
-#[macro_use] extern crate structopt;
-
 use rnix::parser::{ASTNode, Data};
 use rnix::tokenizer::Meta;
 use rnix::tokenizer::Trivia;
@@ -7,6 +5,11 @@ use rnix;
 use std::fs;
 use std::path::PathBuf;
 use structopt::StructOpt;
+use std::io::{self, Write};
+use xml::writer::{EventWriter, EmitterConfig, XmlEvent};
+use failure::Error;
+
+type Result<T> = std::result::Result<T, Error>;
 
 /// Command line arguments for nixdoc
 #[derive(Debug, StructOpt)]
@@ -47,6 +50,9 @@ struct Parameter {
 /// Represents a single manual section describing a library function.
 #[derive(Debug)]
 struct ManualEntry {
+    /// Name of the ... (TODO: Word for this? attrsets, strings, trivial etc)
+    category: String,
+
     /// Name of the section (used as the title)
     name: String,
 
@@ -59,6 +65,44 @@ struct ManualEntry {
 
     /// Parameters of the function
     parameters: Vec<Parameter>,
+}
+
+impl ManualEntry {
+    /// Write a single DocBook entry for a documented Nix function.
+    fn write_section_xml<W: Write>(&self, w: &mut EventWriter<W>) -> Result<()> {
+        let ident = format!("lib.{}.{}", self.category, self.name);
+
+        // <section ...
+        w.write(XmlEvent::start_element("section")
+                .attr("xml:id", format!("function-library-{}", ident).as_str()))?;
+
+        // <title> ...
+        w.write(XmlEvent::start_element("title"))?;
+        w.write(XmlEvent::start_element("function"))?;
+        w.write(XmlEvent::characters(ident.as_str()))?;
+        w.write(XmlEvent::end_element())?;
+        w.write(XmlEvent::end_element())?;
+
+        // <subtitle> (type signature)
+        if let Some(t) = &self.fn_type {
+            w.write(XmlEvent::start_element("subtitle"))?;
+            w.write(XmlEvent::start_element("literal"))?;
+            w.write(XmlEvent::characters(t))?;
+            w.write(XmlEvent::end_element())?;
+            w.write(XmlEvent::end_element())?;
+        }
+
+        // Primary doc string
+        // TODO: Split paragraphs?
+        w.write(XmlEvent::start_element("para"))?;
+        w.write(XmlEvent::characters(&self.description))?;
+        w.write(XmlEvent::end_element())?;
+
+        // </section>
+        w.write(XmlEvent::end_element())?;
+
+        Ok(())
+    }
 }
 
 /// Retrieve documentation comments. For now only multiline comments
@@ -110,7 +154,7 @@ fn parse_doc_comment(raw: &str) -> DocComment {
 
         if line.starts_with("Type:") {
             state = ParseState::Type;
-            line = line.trim_start_matches("Type:");
+            line = &line[5..]; //.trim_start_matches("Type:");
         }
 
         if line.starts_with("Example:") {
@@ -146,11 +190,26 @@ fn main() {
     let src = fs::read_to_string(opts.file).unwrap();
     let nix = rnix::parse(&src).unwrap();
 
-    let doc_items: Vec<DocItem> = nix.arena.into_iter()
+    let entries: Vec<ManualEntry> = nix.arena.into_iter()
         .filter_map(retrieve_doc_item)
+        .map(|d| ManualEntry {
+            category: "foo".into(),
+            name: d.name,
+            description: d.comment.doc,
+            fn_type: d.comment.doc_type,
+            parameters: vec![],
+        })
         .collect();
 
-    for doc_item in doc_items {
-        println!("Item: {}\nDoc: {:#?}", doc_item.name, doc_item.comment)
+    let mut writer = EmitterConfig::new()
+        .perform_indent(true)
+        .create_writer(io::stdout());
+
+    for entry in entries {
+        entry.write_section_xml(&mut writer).expect("Failed to write section")
     }
+
+    // for doc_item in doc_items {
+    //     println!("Item: {}\nDoc: {:#?}", doc_item.name, doc_item.comment)
+    // }
 }
