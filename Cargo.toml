@@ -1,0 +1,11 @@
+[package]
+name = "nixdoc"
+version = "0.1.0"
+authors = ["Vincent Ambo <mail@tazj.in>"]
+edition = "2018"
+
+[dependencies]
+rnix = "0.4"
+xml-rs = "0.8"
+pulldown-cmark = "0.1"
+regex = "1.0"
