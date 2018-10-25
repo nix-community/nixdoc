@@ -10,6 +10,9 @@ into a DocBook representation of the function set.
 Please see [this Discourse thread][] for information on the
 documentation format and general discussion.
 
+Check out [this example][] of documentation generated for the
+`strings.nix` file.
+
 ## Comment format
 
 (Note: The parser for this is a quick hack, I don't want to spend time
@@ -37,4 +40,5 @@ This project requires a nightly Rust compiler build.
 
 [rnix]: https://gitlab.com/jD91mZM2/rnix
 [this Discourse thread]: https://discourse.nixos.org/t/nixpkgs-library-function-documentation-doc-tests/1156
+[this example]: https://storage.googleapis.com/files.tazj.in/nixdoc/manual.html#sec-functions-library-strings
 [issues]: https://github.com/tazjin/nixdoc/issues
