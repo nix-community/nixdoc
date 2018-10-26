@@ -7,7 +7,7 @@
 //! * figure out how to specify examples (& leading whitespace?!)
 
 use failure::Error;
-use rnix::parser::{ASTNode, Data};
+use rnix::parser::{Arena, ASTNode, ASTKind, Data};
 use rnix::tokenizer::Meta;
 use rnix::tokenizer::Trivia;
 use rnix;
@@ -52,15 +52,7 @@ struct DocComment {
 struct DocItem {
     name: String,
     comment: DocComment,
-}
-
-/// Represents a single function parameter and (potentially) its
-/// documentation.
-#[derive(Debug)]
-struct Parameter {
-    name: String,
-    description: Option<String>,
-    arg_type: Option<String>,
+    args: Vec<String>,
 }
 
 /// Represents a single manual section describing a library function.
@@ -83,8 +75,8 @@ struct ManualEntry {
     /// Usage example for the entry.
     example: Option<String>,
 
-    /// Parameters of the function
-    parameters: Vec<Parameter>,
+    /// Arguments of the function
+    args: Vec<String>,
 }
 
 impl ManualEntry {
@@ -124,6 +116,30 @@ impl ManualEntry {
         for paragraph in &self.description {
             w.write(XmlEvent::start_element("para"))?;
             w.write(XmlEvent::characters(paragraph))?;
+            w.write(XmlEvent::end_element())?;
+        }
+
+        // Function argument names
+        if !self.args.is_empty() {
+            w.write(XmlEvent::start_element("variablelist"))?;
+            for arg in &self.args {
+                w.write(XmlEvent::start_element("varlistentry"))?;
+
+                w.write(XmlEvent::start_element("term"))?;
+                w.write(XmlEvent::start_element("varname"))?;
+                w.write(XmlEvent::characters(arg))?;
+                w.write(XmlEvent::end_element())?;
+                w.write(XmlEvent::end_element())?;
+
+                w.write(XmlEvent::start_element("listitem"))?;
+                w.write(XmlEvent::start_element("para"))?;
+                w.write(XmlEvent::characters("Function argument"))?;
+                w.write(XmlEvent::end_element())?;
+                w.write(XmlEvent::end_element())?;
+
+                w.write(XmlEvent::end_element())?;
+            }
+
             w.write(XmlEvent::end_element())?;
         }
 
@@ -181,6 +197,7 @@ fn retrieve_doc_item(node: &ASTNode) -> Option<DocItem> {
         return Some(DocItem {
             name: name.to_string(),
             comment: parse_doc_comment(&comment),
+            args: vec![],
         })
     }
 
@@ -227,7 +244,6 @@ fn parse_doc_comment(raw: &str) -> DocComment {
         }
     }
 
-
     let f = |s: String| if s.is_empty() { None } else { Some(s.into()) };
 
     DocComment {
@@ -237,13 +253,79 @@ fn parse_doc_comment(raw: &str) -> DocComment {
     }
 }
 
+/// Traverse a Nix lambda and collect the identifiers of arguments
+/// until an unexpected AST node is encountered.
+///
+/// This will collect the argument names for curried functions in the
+/// `a: b: c: ...`-style, but does not currently work with pattern
+/// functions (`{ a, b, c }: ...`).
+///
+/// In the AST representation used by rnix, any lambda node has an
+/// immediate child that is the identifier of its argument. The "body"
+/// of the lambda is two steps to the right from that identifier, if
+/// it is a lambda the function is curried and we can recurse.
+fn collect_lambda_args<'a>(arena: &Arena<'a>,
+                           lambda_node: &ASTNode,
+                           args: &mut Vec<String>) -> Option<()> {
+    let ident_node = &arena[lambda_node.node.child?];
+    if let Data::Ident(_, name) = &ident_node.data {
+        args.push(name.to_string());
+    }
+
+    // Two to the right ...
+    let token_node = &arena[ident_node.node.sibling?];
+    let body_node = &arena[token_node.node.sibling?];
+
+    // Curried or not?
+    if body_node.kind == ASTKind::Lambda {
+        collect_lambda_args(arena, body_node, args);
+    }
+
+    Some(())
+}
+
+/// Traverse the arena from a top-level SetEntry and collect, where
+/// possible:
+///
+/// 1. The identifier of the set entry itself.
+/// 2. The attached doc comment on the entry.
+/// 3. The argument names of any curried functions (pattern functions
+///    not yet supported).
+fn collect_entry_information<'a>(arena: &Arena<'a>, entry_node: &ASTNode) -> Option<DocItem> {
+    // The "root" of any attribute set entry is this `SetEntry` node.
+    // It has an `Attribute` child, which in turn has the identifier
+    // (on which the documentation comment is stored) as its child.
+    let attr_node = &arena[entry_node.node.child?];
+    let ident_node = &arena[attr_node.node.child?];
+
+    // At this point we can retrieve the `DocItem` from the identifier
+    // node - this already contains most of the information we are
+    // interested in.
+    let doc_item = retrieve_doc_item(ident_node)?;
+
+    // From our entry we can walk two nodes to the right and check
+    // whether we are dealing with a lambda. If so, we can start
+    // collecting the function arguments - otherwise we're done.
+    let assign_node = &arena[attr_node.node.sibling?];
+    let content_node = &arena[assign_node.node.sibling?];
+
+    if content_node.kind == ASTKind::Lambda {
+        let mut args: Vec<String> = vec![];
+        collect_lambda_args(arena, content_node, &mut args);
+        Some(DocItem { args, ..doc_item })
+    } else {
+        Some(doc_item)
+    }
+}
+
 fn main() {
     let opts = Options::from_args();
     let src = fs::read_to_string(&opts.file).unwrap();
     let nix = rnix::parse(&src).unwrap();
 
     let entries: Vec<ManualEntry> = nix.arena.into_iter()
-        .filter_map(retrieve_doc_item)
+        .filter(|node| node.kind == ASTKind::SetEntry)
+        .filter_map(|node| collect_entry_information(&nix.arena, node))
         .map(|d| ManualEntry {
             category: opts.category.clone(),
             name: d.name,
@@ -253,7 +335,7 @@ fn main() {
                 .collect(),
             fn_type: d.comment.doc_type,
             example: d.comment.example,
-            parameters: vec![],
+            args: d.args,
         })
         .collect();
 
