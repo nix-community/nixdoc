@@ -52,7 +52,18 @@ struct DocComment {
 struct DocItem {
     name: String,
     comment: DocComment,
-    args: Vec<String>,
+    args: Vec<Argument>,
+}
+
+/// Represent a function argument, which is either a flat identifier
+/// or a pattern set.
+#[derive(Debug)]
+enum Argument {
+    /// Flat function argument (e.g. `n: n * 2`).
+    Flat(String),
+
+    /// Pattern function argument (e.g. `{ name, age }: ...`)
+    Pattern(Vec<String>),
 }
 
 /// Represents a single manual section describing a library function.
@@ -76,7 +87,7 @@ struct ManualEntry {
     example: Option<String>,
 
     /// Arguments of the function
-    args: Vec<String>,
+    args: Vec<Argument>,
 }
 
 impl ManualEntry {
@@ -123,21 +134,28 @@ impl ManualEntry {
         if !self.args.is_empty() {
             w.write(XmlEvent::start_element("variablelist"))?;
             for arg in &self.args {
-                w.write(XmlEvent::start_element("varlistentry"))?;
+                match arg {
+                    Argument::Flat(name) => {
+                        w.write(XmlEvent::start_element("varlistentry"))?;
 
-                w.write(XmlEvent::start_element("term"))?;
-                w.write(XmlEvent::start_element("varname"))?;
-                w.write(XmlEvent::characters(arg))?;
-                w.write(XmlEvent::end_element())?;
-                w.write(XmlEvent::end_element())?;
+                        w.write(XmlEvent::start_element("term"))?;
+                        w.write(XmlEvent::start_element("varname"))?;
+                        w.write(XmlEvent::characters(name))?;
+                        w.write(XmlEvent::end_element())?;
+                        w.write(XmlEvent::end_element())?;
 
-                w.write(XmlEvent::start_element("listitem"))?;
-                w.write(XmlEvent::start_element("para"))?;
-                w.write(XmlEvent::characters("Function argument"))?;
-                w.write(XmlEvent::end_element())?;
-                w.write(XmlEvent::end_element())?;
+                        w.write(XmlEvent::start_element("listitem"))?;
+                        w.write(XmlEvent::start_element("para"))?;
+                        w.write(XmlEvent::characters("Function argument"))?;
+                        w.write(XmlEvent::end_element())?;
+                        w.write(XmlEvent::end_element())?;
 
-                w.write(XmlEvent::end_element())?;
+                        w.write(XmlEvent::end_element())?;
+                    },
+                    Argument::Pattern(pattern_args) => {
+                        panic!("Pattern arguments: {:?}", pattern_args);
+                    },
+                }
             }
 
             w.write(XmlEvent::end_element())?;
@@ -253,6 +271,23 @@ fn parse_doc_comment(raw: &str) -> DocComment {
     }
 }
 
+/// Traverse a pattern argument, collecting its argument names.
+fn collect_pattern_args<'a>(arena: &Arena<'a>,
+                           entry: &ASTNode,
+                           args: &mut Vec<String>) -> Option<()> {
+    if let Data::Ident(_, name) = &arena[entry.node.child?].data {
+        args.push(name.to_string());
+    }
+
+    // Recurse, but only if the entry's sibling is also an entry.
+    let next_entry = &arena[entry.node.sibling?];
+    if next_entry.kind == ASTKind::PatEntry {
+        collect_pattern_args(arena, next_entry, args);
+    }
+
+    Some(())
+}
+
 /// Traverse a Nix lambda and collect the identifiers of arguments
 /// until an unexpected AST node is encountered.
 ///
@@ -266,10 +301,29 @@ fn parse_doc_comment(raw: &str) -> DocComment {
 /// it is a lambda the function is curried and we can recurse.
 fn collect_lambda_args<'a>(arena: &Arena<'a>,
                            lambda_node: &ASTNode,
-                           args: &mut Vec<String>) -> Option<()> {
+                           args: &mut Vec<Argument>) -> Option<()> {
     let ident_node = &arena[lambda_node.node.child?];
+
+    // "Flat" function arguments are represented as identifiers, ..
     if let Data::Ident(_, name) = &ident_node.data {
-        args.push(name.to_string());
+        args.push(Argument::Flat(name.to_string()));
+    }
+
+    // ... pattern style arguments are represented as, well, patterns.
+    if ident_node.kind == ASTKind::Pattern {
+        let mut pattern_vec = vec![];
+
+        // The first child of a pattern is a token representing the
+        // opening curly brace, followed by a sibling chain of
+        // `PatEntry` nodes which each have the identifier as their
+        // first child.
+        let token_node = &arena[ident_node.node.child?];
+        let first_entry = &arena[token_node.node.sibling?];
+        collect_pattern_args(arena, first_entry, &mut pattern_vec);
+
+        if !pattern_vec.is_empty() {
+            args.push(Argument::Pattern(pattern_vec));
+        }
     }
 
     // Two to the right ...
@@ -310,7 +364,7 @@ fn collect_entry_information<'a>(arena: &Arena<'a>, entry_node: &ASTNode) -> Opt
     let content_node = &arena[assign_node.node.sibling?];
 
     if content_node.kind == ASTKind::Lambda {
-        let mut args: Vec<String> = vec![];
+        let mut args: Vec<Argument> = vec![];
         collect_lambda_args(arena, content_node, &mut args);
         Some(DocItem { args, ..doc_item })
     } else {
