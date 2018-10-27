@@ -5,6 +5,24 @@ use std::io::Write;
 use xml::writer::{EventWriter, XmlEvent};
 use failure::Error;
 
+/// Write a plain start element (most commonly used).
+fn element<W: Write>(w: &mut EventWriter<W>, name: &str) -> Result<(), Error> {
+    w.write(XmlEvent::start_element(name))?;
+    Ok(())
+}
+
+/// End an element.
+fn end<W: Write>(w: &mut EventWriter<W>) -> Result<(), Error> {
+    w.write(XmlEvent::end_element())?;
+    Ok(())
+}
+
+/// Write a string.
+fn string<W: Write>(w: &mut EventWriter<W>, content: &str) -> Result<(), Error> {
+    w.write(XmlEvent::characters(content))?;
+    Ok(())
+}
+
 /// Represent a function argument, which is either a flat identifier
 /// or a pattern set.
 #[derive(Debug)]
@@ -14,6 +32,40 @@ pub enum Argument {
 
     /// Pattern function argument (e.g. `{ name, age }: ...`)
     Pattern(Vec<String>),
+}
+
+impl Argument {
+    /// Write DocBook structure for a single function argument.
+    fn write_argument_xml<W: Write>(&self, w: &mut EventWriter<W>) -> Result<(), Error> {
+        match self {
+            // Write a flat argument entry.
+            Argument::Flat(name) => {
+                element(w, "varlistentry")?;
+
+                element(w, "term")?;
+                element(w, "varname")?;
+                string(w, name)?;
+                end(w)?;
+                end(w)?;
+
+                element(w, "listitem")?;
+                element(w, "para")?;
+                string(w, "Function argument")?;
+                end(w)?;
+                end(w)?;
+
+                end(w)?;
+            },
+
+            // Write a pattern argument entry and its individual
+            // parameters as a nested structure.
+            Argument::Pattern(pattern_args) => {
+
+            },
+        }
+
+        Ok(())
+    }
 }
 
 /// Represents a single manual section describing a library function.
@@ -50,19 +102,19 @@ impl ManualEntry {
                 .attr("xml:id", format!("function-library-{}", ident).as_str()))?;
 
         // <title> ...
-        w.write(XmlEvent::start_element("title"))?;
-        w.write(XmlEvent::start_element("function"))?;
-        w.write(XmlEvent::characters(ident.as_str()))?;
-        w.write(XmlEvent::end_element())?;
-        w.write(XmlEvent::end_element())?;
+        element(w, "title")?;
+        element(w, "function")?;
+        string(w, ident.as_str())?;
+        end(w)?;
+        end(w)?;
 
         // <subtitle> (type signature)
         if let Some(t) = &self.fn_type {
-            w.write(XmlEvent::start_element("subtitle"))?;
-            w.write(XmlEvent::start_element("literal"))?;
-            w.write(XmlEvent::characters(t))?;
-            w.write(XmlEvent::end_element())?;
-            w.write(XmlEvent::end_element())?;
+            element(w, "subtitle")?;
+            element(w, "literal")?;
+            string(w, t)?;
+            end(w)?;
+            end(w)?;
         }
 
         // Include link to function location (location information is
@@ -70,45 +122,25 @@ impl ManualEntry {
         w.write(XmlEvent::start_element("xi:include")
                 .attr("href", "./locations.xml")
                 .attr("xpointer", &ident))?;
-        w.write(XmlEvent::end_element())?;
+        end(w)?;
 
         // Primary doc string
         // TODO: Split paragraphs?
         for paragraph in &self.description {
-            w.write(XmlEvent::start_element("para"))?;
-            w.write(XmlEvent::characters(paragraph))?;
-            w.write(XmlEvent::end_element())?;
+            element(w, "para")?;
+            string(w, paragraph)?;
+            end(w)?;
         }
 
         // Function argument names
         if !self.args.is_empty() {
-            w.write(XmlEvent::start_element("variablelist"))?;
+            element(w, "variablelist")?;
+
             for arg in &self.args {
-                match arg {
-                    Argument::Flat(name) => {
-                        w.write(XmlEvent::start_element("varlistentry"))?;
-
-                        w.write(XmlEvent::start_element("term"))?;
-                        w.write(XmlEvent::start_element("varname"))?;
-                        w.write(XmlEvent::characters(name))?;
-                        w.write(XmlEvent::end_element())?;
-                        w.write(XmlEvent::end_element())?;
-
-                        w.write(XmlEvent::start_element("listitem"))?;
-                        w.write(XmlEvent::start_element("para"))?;
-                        w.write(XmlEvent::characters("Function argument"))?;
-                        w.write(XmlEvent::end_element())?;
-                        w.write(XmlEvent::end_element())?;
-
-                        w.write(XmlEvent::end_element())?;
-                    },
-                    Argument::Pattern(pattern_args) => {
-                        panic!("Pattern arguments: {:?}", pattern_args);
-                    },
-                }
+                arg.write_argument_xml(w)?;
             }
 
-            w.write(XmlEvent::end_element())?;
+            end(w)?;
         }
 
         // Example program listing (if applicable)
@@ -116,26 +148,26 @@ impl ManualEntry {
         // TODO: In grhmc's version there are multiple (named)
         // examples, how can this be achieved automatically?
         if let Some(example) = &self.example {
-            w.write(XmlEvent::start_element("example"))?;
+            element(w, "example")?;
 
-            w.write(XmlEvent::start_element("title"))?;
+            element(w, "title")?;
 
-            w.write(XmlEvent::start_element("function"))?;
-            w.write(XmlEvent::characters(ident.as_str()))?;
-            w.write(XmlEvent::end_element())?;
+            element(w, "function")?;
+            string(w, ident.as_str())?;
+            end(w)?;
 
-            w.write(XmlEvent::characters(" usage example"))?;
-            w.write(XmlEvent::end_element())?;
+            string(w, " usage example")?;
+            end(w)?;
 
-            w.write(XmlEvent::start_element("programlisting"))?;
+            element(w, "programlisting")?;
             w.write(XmlEvent::cdata(example))?;
-            w.write(XmlEvent::end_element())?;
+            end(w)?;
 
-            w.write(XmlEvent::end_element())?;
+            end(w)?;
         }
 
         // </section>
-        w.write(XmlEvent::end_element())?;
+        end(w)?;
 
         Ok(())
     }
