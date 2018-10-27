@@ -60,7 +60,27 @@ impl Argument {
             // Write a pattern argument entry and its individual
             // parameters as a nested structure.
             Argument::Pattern(pattern_args) => {
+                element(w, "varlistentry")?;
 
+                element(w, "term")?;
+                element(w, "varname")?;
+                string(w, "pattern")?;
+                end(w)?;
+                end(w)?;
+
+                element(w, "listitem")?;
+                element(w, "para")?;
+                string(w, "Structured function argument")?;
+                end(w)?;
+
+                element(w, "variablelist")?;
+                for pattern_arg in pattern_args {
+                    Argument::Flat(pattern_arg.to_string())
+                        .write_argument_xml(w)?;
+                }
+                end(w)?;
+                end(w)?;
+                end(w)?;
             },
         }
 
