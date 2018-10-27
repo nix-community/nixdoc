@@ -123,7 +123,8 @@ pub struct ManualEntry {
 impl ManualEntry {
     /// Write a single DocBook entry for a documented Nix function.
     pub fn write_section_xml<W: Write>(self, w: &mut EventWriter<W>) -> Result<(), Error> {
-        let ident = format!("lib.{}.{}", self.category, self.name);
+        let title = format!("lib.{}.{}", self.category, self.name);
+        let ident = format!("lib.{}.{}", self.category, self.name.replace("'", "-prime"));
 
         // <section ...
         w.write(XmlEvent::start_element("section")
@@ -132,7 +133,7 @@ impl ManualEntry {
         // <title> ...
         element(w, "title")?;
         element(w, "function")?;
-        string(w, ident.as_str())?;
+        string(w, title.as_str())?;
         end(w)?;
         end(w)?;
 
@@ -181,7 +182,7 @@ impl ManualEntry {
             element(w, "title")?;
 
             element(w, "function")?;
-            string(w, ident.as_str())?;
+            string(w, title.as_str())?;
             end(w)?;
 
             string(w, " usage example")?;
