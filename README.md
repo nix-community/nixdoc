@@ -30,6 +30,19 @@ Two special line beginnings are recognised:
 These will result in appropriate elements being inserted into the
 output.
 
+## Function arguments
+
+Function arguments can be documented by prefixing them with a comment:
+
+```
+/* This function does the thing a number of times. */
+myFunction =
+    # The thing to do
+    thing:
+    # How many times to do it
+    n: doNTimes n thing
+```
+
 ## Caveats & TODOs
 
 Please check the [issues][] page.
