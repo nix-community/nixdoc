@@ -23,34 +23,42 @@ fn string<W: Write>(w: &mut EventWriter<W>, content: &str) -> Result<(), Error> 
     Ok(())
 }
 
+/// Represent a single function argument name and its (optional)
+/// doc-string.
+#[derive(Debug)]
+pub struct SingleArg {
+    pub name: String,
+    pub doc: Option<String>,
+}
+
 /// Represent a function argument, which is either a flat identifier
 /// or a pattern set.
 #[derive(Debug)]
 pub enum Argument {
     /// Flat function argument (e.g. `n: n * 2`).
-    Flat(String),
+    Flat(SingleArg),
 
     /// Pattern function argument (e.g. `{ name, age }: ...`)
-    Pattern(Vec<String>),
+    Pattern(Vec<SingleArg>),
 }
 
 impl Argument {
     /// Write DocBook structure for a single function argument.
-    fn write_argument_xml<W: Write>(&self, w: &mut EventWriter<W>) -> Result<(), Error> {
+    fn write_argument_xml<W: Write>(self, w: &mut EventWriter<W>) -> Result<(), Error> {
         match self {
             // Write a flat argument entry.
-            Argument::Flat(name) => {
+            Argument::Flat(arg) => {
                 element(w, "varlistentry")?;
 
                 element(w, "term")?;
                 element(w, "varname")?;
-                string(w, name)?;
+                string(w, &arg.name)?;
                 end(w)?;
                 end(w)?;
 
                 element(w, "listitem")?;
                 element(w, "para")?;
-                string(w, "Function argument")?;
+                string(w, arg.doc.unwrap_or("Function argument".into()).trim())?;
                 end(w)?;
                 end(w)?;
 
@@ -75,7 +83,7 @@ impl Argument {
 
                 element(w, "variablelist")?;
                 for pattern_arg in pattern_args {
-                    Argument::Flat(pattern_arg.to_string())
+                    Argument::Flat(pattern_arg)
                         .write_argument_xml(w)?;
                 }
                 end(w)?;
@@ -114,7 +122,7 @@ pub struct ManualEntry {
 
 impl ManualEntry {
     /// Write a single DocBook entry for a documented Nix function.
-    pub fn write_section_xml<W: Write>(&self, w: &mut EventWriter<W>) -> Result<(), Error> {
+    pub fn write_section_xml<W: Write>(self, w: &mut EventWriter<W>) -> Result<(), Error> {
         let ident = format!("lib.{}.{}", self.category, self.name);
 
         // <section ...
@@ -156,7 +164,7 @@ impl ManualEntry {
         if !self.args.is_empty() {
             element(w, "variablelist")?;
 
-            for arg in &self.args {
+            for arg in self.args {
                 arg.write_argument_xml(w)?;
             }
 
