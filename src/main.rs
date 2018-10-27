@@ -57,10 +57,10 @@ struct DocItem {
 
 /// Retrieve documentation comments. For now only multiline comments
 /// starting with `@doc` are considered.
-fn retrieve_doc_comment(meta: &Meta) -> Option<String> {
+fn retrieve_doc_comment(allow_single_line: bool, meta: &Meta) -> Option<String> {
     for item in meta.leading.iter() {
         if let Trivia::Comment { multiline, content, .. } = item {
-            if *multiline { //  && content.as_str().starts_with(" @doc") {
+            if *multiline || allow_single_line {
                 return Some(content.to_string())
             }
         }
@@ -74,7 +74,7 @@ fn retrieve_doc_comment(meta: &Meta) -> Option<String> {
 fn retrieve_doc_item(node: &ASTNode) -> Option<DocItem> {
     // We are only interested in identifiers.
     if let Data::Ident(meta, name) = &node.data {
-        let comment = retrieve_doc_comment(meta)?;
+        let comment = retrieve_doc_comment(false, meta)?;
 
         return Some(DocItem {
             name: name.to_string(),
@@ -137,10 +137,13 @@ fn parse_doc_comment(raw: &str) -> DocComment {
 
 /// Traverse a pattern argument, collecting its argument names.
 fn collect_pattern_args<'a>(arena: &Arena<'a>,
-                           entry: &ASTNode,
-                           args: &mut Vec<String>) -> Option<()> {
-    if let Data::Ident(_, name) = &arena[entry.node.child?].data {
-        args.push(name.to_string());
+                            entry: &ASTNode,
+                            args: &mut Vec<SingleArg>) -> Option<()> {
+    if let Data::Ident(meta, name) = &arena[entry.node.child?].data {
+        args.push(SingleArg {
+            name: name.to_string(),
+            doc: retrieve_doc_comment(true, meta),
+        });
     }
 
     // Recurse, but only if the entry's sibling is also an entry.
@@ -169,8 +172,11 @@ fn collect_lambda_args<'a>(arena: &Arena<'a>,
     let ident_node = &arena[lambda_node.node.child?];
 
     // "Flat" function arguments are represented as identifiers, ..
-    if let Data::Ident(_, name) = &ident_node.data {
-        args.push(Argument::Flat(name.to_string()));
+    if let Data::Ident(meta, name) = &ident_node.data {
+        args.push(Argument::Flat(SingleArg {
+            name: name.to_string(),
+            doc: retrieve_doc_comment(true, meta),
+        }));
     }
 
     // ... pattern style arguments are represented as, well, patterns.
