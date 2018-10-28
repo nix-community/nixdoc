@@ -18,7 +18,7 @@ let kernel = buildPlatform.parsed.kernel.name;
     ) [] (builtins.attrNames feat);
 in
 rec {
-  nixdoc = f: nixdoc_0_1_0 { features = nixdoc_0_1_0_features { nixdoc_0_1_0 = f; }; };
+  nixdoc = f: nixdoc_1_0_0 { features = nixdoc_1_0_0_features { nixdoc_1_0_0 = f; }; };
   __all = [ (nixdoc {}) ];
   ansi_term_0_11_0_ = { dependencies?[], buildDependencies?[], features?[] }: buildRustCrate {
     crateName = "ansi_term";
@@ -119,9 +119,9 @@ rec {
     sha256 = "0pshydmsq71kl9276zc2928ld50sp524ixcqkcqsgq410dx6c50b";
     inherit dependencies buildDependencies features;
   };
-  nixdoc_0_1_0_ = { dependencies?[], buildDependencies?[], features?[] }: buildRustCrate {
+  nixdoc_1_0_0_ = { dependencies?[], buildDependencies?[], features?[] }: buildRustCrate {
     crateName = "nixdoc";
-    version = "0.1.0";
+    version = "1.0.0";
     authors = [ "Vincent Ambo <mail@tazj.in>" ];
     src = ./.;
     inherit dependencies buildDependencies features;
@@ -564,12 +564,12 @@ rec {
       (f.libc_0_2_43.default or false) ||
       (libc_0_2_43.default or false);
   }) [];
-  nixdoc_0_1_0 = { features?(nixdoc_0_1_0_features {}) }: nixdoc_0_1_0_ {
+  nixdoc_1_0_0 = { features?(nixdoc_1_0_0_features {}) }: nixdoc_1_0_0_ {
     dependencies = mapFeatures features ([ failure_0_1_3 rnix_0_4_1 structopt_0_2_12 xml_rs_0_8_0 ]);
   };
-  nixdoc_0_1_0_features = f: updateFeatures f (rec {
+  nixdoc_1_0_0_features = f: updateFeatures f (rec {
     failure_0_1_3.default = true;
-    nixdoc_0_1_0.default = (f.nixdoc_0_1_0.default or true);
+    nixdoc_1_0_0.default = (f.nixdoc_1_0_0.default or true);
     rnix_0_4_1.default = true;
     structopt_0_2_12.default = true;
     xml_rs_0_8_0.default = true;
