@@ -18,7 +18,7 @@ let kernel = buildPlatform.parsed.kernel.name;
     ) [] (builtins.attrNames feat);
 in
 rec {
-  nixdoc = f: nixdoc_1_0_0 { features = nixdoc_1_0_0_features { nixdoc_1_0_0 = f; }; };
+  nixdoc = f: nixdoc_1_0_1 { features = nixdoc_1_0_1_features { nixdoc_1_0_1 = f; }; };
   __all = [ (nixdoc {}) ];
   ansi_term_0_11_0_ = { dependencies?[], buildDependencies?[], features?[] }: buildRustCrate {
     crateName = "ansi_term";
@@ -33,8 +33,8 @@ rec {
     authors = [ "jD91mZM2 <me@krake.one>" ];
     src = fetchgit {
        url = "https://gitlab.com/jD91mZM2/arenatree";
-       rev = "89d40688b5928bcbd7c8d2d30818101d9022a544";
-       sha256 = "1w9lp4d9mpb0h6l5ir15b390rxm8xhhdwqb8hmqjiy7j6l742kng";
+       rev = "f9bf7efa9a5ef4c2dd9e2acc5a4cc79a987cb648";
+       sha256 = "1153ki8rnaiyb24a6vdsa3wywpdp97x92vyc2jik9cnni5nmaxbg";
        fetchSubmodules = false;
     };
     inherit dependencies buildDependencies features;
@@ -119,9 +119,9 @@ rec {
     sha256 = "0pshydmsq71kl9276zc2928ld50sp524ixcqkcqsgq410dx6c50b";
     inherit dependencies buildDependencies features;
   };
-  nixdoc_1_0_0_ = { dependencies?[], buildDependencies?[], features?[] }: buildRustCrate {
+  nixdoc_1_0_1_ = { dependencies?[], buildDependencies?[], features?[] }: buildRustCrate {
     crateName = "nixdoc";
-    version = "1.0.0";
+    version = "1.0.1";
     authors = [ "Vincent Ambo <mail@tazj.in>" ];
     src = ./.;
     inherit dependencies buildDependencies features;
@@ -170,8 +170,8 @@ rec {
     authors = [ "jD91mZM2 <me@krake.one>" ];
     src = fetchgit {
        url = "https://gitlab.com/jD91mZM2/rnix.git";
-       rev = "d8d7f8802423cdc23cfed0c8b27bfd51753bde7c";
-       sha256 = "1l1ha5hlgaislr4gd1g2lqbmbgs10jda1p88933py43xl6g4n2m1";
+       rev = "10b86c94291b4864470158ef8750de85ddd8d4ba";
+       sha256 = "0c0i42sfwv6wm2zqjfaszf4y03ahm5d0dar3xj3jj0isg6lzylhb";
        fetchSubmodules = false;
     };
     inherit dependencies buildDependencies features;
@@ -564,12 +564,12 @@ rec {
       (f.libc_0_2_43.default or false) ||
       (libc_0_2_43.default or false);
   }) [];
-  nixdoc_1_0_0 = { features?(nixdoc_1_0_0_features {}) }: nixdoc_1_0_0_ {
+  nixdoc_1_0_1 = { features?(nixdoc_1_0_1_features {}) }: nixdoc_1_0_1_ {
     dependencies = mapFeatures features ([ failure_0_1_3 rnix_0_4_1 structopt_0_2_12 xml_rs_0_8_0 ]);
   };
-  nixdoc_1_0_0_features = f: updateFeatures f (rec {
+  nixdoc_1_0_1_features = f: updateFeatures f (rec {
     failure_0_1_3.default = true;
-    nixdoc_1_0_0.default = (f.nixdoc_1_0_0.default or true);
+    nixdoc_1_0_1.default = (f.nixdoc_1_0_1.default or true);
     rnix_0_4_1.default = true;
     structopt_0_2_12.default = true;
     xml_rs_0_8_0.default = true;
