@@ -9,5 +9,5 @@ structopt = "0.2"
 failure = "0.1"
 
 [dependencies.rnix]
-git = "https://gitlab.com/jD91mZM2/rnix"
-branch = "stable"
+git = "https://gitlab.com/jD91mZM2/rnix.git"
+rev = "d8d7f8802423cdc23cfed0c8b27bfd51753bde7c"
