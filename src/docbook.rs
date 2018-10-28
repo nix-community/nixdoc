@@ -21,19 +21,19 @@ use xml::writer::{EventWriter, XmlEvent};
 use failure::Error;
 
 /// Write a plain start element (most commonly used).
-fn element<W: Write>(w: &mut EventWriter<W>, name: &str) -> Result<(), Error> {
+pub fn element<W: Write>(w: &mut EventWriter<W>, name: &str) -> Result<(), Error> {
     w.write(XmlEvent::start_element(name))?;
     Ok(())
 }
 
 /// End an element.
-fn end<W: Write>(w: &mut EventWriter<W>) -> Result<(), Error> {
+pub fn end<W: Write>(w: &mut EventWriter<W>) -> Result<(), Error> {
     w.write(XmlEvent::end_element())?;
     Ok(())
 }
 
 /// Write a string.
-fn string<W: Write>(w: &mut EventWriter<W>, content: &str) -> Result<(), Error> {
+pub fn string<W: Write>(w: &mut EventWriter<W>, content: &str) -> Result<(), Error> {
     w.write(XmlEvent::characters(content))?;
     Ok(())
 }

@@ -22,11 +22,13 @@
 //! * figure out how to specify examples (& leading whitespace?!)
 
 #[macro_use] extern crate structopt;
-extern crate xml;
 extern crate failure;
+extern crate pulldown_cmark;
 extern crate rnix;
+extern crate xml;
 
 mod docbook;
+mod markdown;
 
 use self::docbook::*;
 use rnix::parser::{Arena, ASTNode, ASTKind, Data};

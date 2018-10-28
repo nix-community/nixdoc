@@ -7,6 +7,7 @@ authors = ["Vincent Ambo <mail@tazj.in>"]
 xml-rs = "0.8"
 structopt = "0.2"
 failure = "0.1"
+pulldown-cmark = "0.1"
 
 [dependencies.rnix]
 git = "https://gitlab.com/jD91mZM2/rnix.git"
