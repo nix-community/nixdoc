@@ -6,13 +6,17 @@
 //! * extract line number & add it to generated output
 //! * figure out how to specify examples (& leading whitespace?!)
 
+#[macro_use] extern crate structopt;
+extern crate xml;
+extern crate failure;
+extern crate rnix;
+
 mod docbook;
 
 use self::docbook::*;
 use rnix::parser::{Arena, ASTNode, ASTKind, Data};
 use rnix::tokenizer::Meta;
 use rnix::tokenizer::Trivia;
-use rnix;
 use std::fs;
 use std::io;
 use std::path::PathBuf;
@@ -98,19 +102,14 @@ fn parse_doc_comment(raw: &str) -> DocComment {
     for line in raw.trim().lines() {
         let mut line = line.trim();
 
-        if line.starts_with("@doc ") {
-            state = ParseState::Doc;
-            line = line.trim_start_matches("@doc ");
-        }
-
         if line.starts_with("Type:") {
             state = ParseState::Type;
-            line = &line[5..]; //.trim_start_matches("Type:");
+            line = &line[5..]; // trim 'Type:'
         }
 
         if line.starts_with("Example:") {
             state = ParseState::Example;
-            line = line.trim_start_matches("Example:");
+            line = &line[8..]; // trim 'Example:'
         }
 
         match state {
