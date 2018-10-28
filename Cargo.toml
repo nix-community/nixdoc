@@ -2,10 +2,12 @@
 name = "nixdoc"
 version = "0.1.0"
 authors = ["Vincent Ambo <mail@tazj.in>"]
-edition = "2018"
 
 [dependencies]
-rnix = "0.4"
 xml-rs = "0.8"
 structopt = "0.2"
 failure = "0.1"
+
+[dependencies.rnix]
+git = "https://gitlab.com/jD91mZM2/rnix.git"
+rev = "d8d7f8802423cdc23cfed0c8b27bfd51753bde7c"
