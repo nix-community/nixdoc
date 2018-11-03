@@ -10,4 +10,7 @@ failure = "0.1"
 
 [dependencies.rnix]
 git = "https://gitlab.com/jD91mZM2/rnix.git"
-rev = "10b86c94291b4864470158ef8750de85ddd8d4ba"
+branch = "rowan"
+
+[dependencies.rowan]
+git = "https://github.com/matklad/rowan.git"

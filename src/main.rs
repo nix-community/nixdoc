@@ -25,16 +25,22 @@
 extern crate xml;
 extern crate failure;
 extern crate rnix;
+extern crate rowan;
 
 mod docbook;
 
 use self::docbook::*;
-use rnix::parser::{Arena, ASTNode, ASTKind, Data};
-use rnix::tokenizer::Meta;
-use rnix::tokenizer::Trivia;
-use std::fs;
-use std::io;
-use std::path::PathBuf;
+use rnix::{
+    parser::{Node, NodeType, Types},
+    tokenizer::Token,
+    types::{Ident, Lambda, Pattern, SetEntry, TypedNode}
+};
+use rowan::{SmolStr, RefRoot, WalkEvent};
+use std::{
+    fs,
+    io,
+    path::PathBuf
+};
 use structopt::StructOpt;
 use xml::writer::{EmitterConfig, XmlEvent};
 
@@ -76,33 +82,53 @@ struct DocItem {
 
 /// Retrieve documentation comments. For now only multiline comments
 /// starting with `@doc` are considered.
-fn retrieve_doc_comment(allow_single_line: bool, meta: &Meta) -> Option<String> {
-    for item in meta.leading.iter() {
-        if let Trivia::Comment { multiline, content, .. } = item {
-            if *multiline || allow_single_line {
-                return Some(content.to_string())
+fn retrieve_doc_comment(allow_single_line: bool, mut node: Node<RefRoot<Types>>) -> Option<String> {
+    loop {
+        // Get the previous node, exploring parents if needed
+        loop {
+            let new = node.prev_sibling();
+            if let Some(new) = new {
+                node = new;
+                break;
+            } else {
+                node = node.parent()?;
             }
         }
-    }
 
-    return None;
+        // Check if it's a comment
+        match node.kind() {
+            NodeType::Token(Token::Comment) => {
+                // Get the content and trim leading # or /*
+                let mut content = node.leaf_text().map(SmolStr::as_str).unwrap_or_default();
+                if content.starts_with('#') && allow_single_line {
+                    content = &content[1..];
+                } else if content.starts_with("/*") {
+                    assert!(content[2..].ends_with("*/"));
+                    let mut len = content.len();
+                    content = &content[2..len-2];
+                } else {
+                    break None;
+                }
+
+                break Some(content.to_string());
+            }
+            NodeType::Token(Token::Whitespace) => (),
+            _ => break None
+        }
+    }
 }
 
 /// Transforms an AST node into a `DocItem` if it has a leading
 /// documentation comment.
-fn retrieve_doc_item(node: &ASTNode) -> Option<DocItem> {
+fn retrieve_doc_item(node: &Ident<RefRoot<Types>>) -> Option<DocItem> {
     // We are only interested in identifiers.
-    if let Data::Ident(meta, name) = &node.data {
-        let comment = retrieve_doc_comment(false, meta)?;
+    let comment = retrieve_doc_comment(false, *node.node())?;
 
-        return Some(DocItem {
-            name: name.to_string(),
-            comment: parse_doc_comment(&comment),
-            args: vec![],
-        })
-    }
-
-    return None;
+    return Some(DocItem {
+        name: node.as_str().to_string(),
+        comment: parse_doc_comment(&comment),
+        args: vec![],
+    })
 }
 
 /// *Really* dumb, mutable, hacky doc comment "parser".
@@ -149,26 +175,6 @@ fn parse_doc_comment(raw: &str) -> DocComment {
     }
 }
 
-/// Traverse a pattern argument, collecting its argument names.
-fn collect_pattern_args<'a>(arena: &Arena<'a>,
-                            entry: &ASTNode,
-                            args: &mut Vec<SingleArg>) -> Option<()> {
-    if let Data::Ident(meta, name) = &arena[entry.node.child?].data {
-        args.push(SingleArg {
-            name: name.to_string(),
-            doc: retrieve_doc_comment(true, meta),
-        });
-    }
-
-    // Recurse, but only if the entry's sibling is also an entry.
-    let next_entry = &arena[entry.node.sibling?];
-    if next_entry.kind == ASTKind::PatEntry {
-        collect_pattern_args(arena, next_entry, args);
-    }
-
-    Some(())
-}
-
 /// Traverse a Nix lambda and collect the identifiers of arguments
 /// until an unexpected AST node is encountered.
 ///
@@ -180,43 +186,39 @@ fn collect_pattern_args<'a>(arena: &Arena<'a>,
 /// immediate child that is the identifier of its argument. The "body"
 /// of the lambda is two steps to the right from that identifier, if
 /// it is a lambda the function is curried and we can recurse.
-fn collect_lambda_args<'a>(arena: &Arena<'a>,
-                           lambda_node: &ASTNode,
-                           args: &mut Vec<Argument>) -> Option<()> {
-    let ident_node = &arena[lambda_node.node.child?];
+fn collect_lambda_args<'a>(lambda_node: &Lambda<RefRoot<Types>>, args: &mut Vec<Argument>) -> Option<()> {
+    let ident_node = lambda_node.arg();
 
     // "Flat" function arguments are represented as identifiers, ..
-    if let Data::Ident(meta, name) = &ident_node.data {
+    if let Some(ident) = Ident::cast(ident_node) {
         args.push(Argument::Flat(SingleArg {
-            name: name.to_string(),
-            doc: retrieve_doc_comment(true, meta),
+            name: ident.as_str().to_string(),
+            doc: retrieve_doc_comment(true, *ident.node()),
         }));
     }
 
     // ... pattern style arguments are represented as, well, patterns.
-    if ident_node.kind == ASTKind::Pattern {
-        let mut pattern_vec = vec![];
-
+    if let Some(pattern) = Pattern::cast(ident_node) {
         // The first child of a pattern is a token representing the
         // opening curly brace, followed by a sibling chain of
         // `PatEntry` nodes which each have the identifier as their
         // first child.
-        let token_node = &arena[ident_node.node.child?];
-        let first_entry = &arena[token_node.node.sibling?];
-        collect_pattern_args(arena, first_entry, &mut pattern_vec);
+        let pattern_vec: Vec<_> = pattern.entries()
+            .map(|entry| entry.name())
+            .map(|name| SingleArg {
+                name: name.as_str().to_string(),
+                doc: retrieve_doc_comment(true, *name.node())
+            })
+            .collect();
 
         if !pattern_vec.is_empty() {
             args.push(Argument::Pattern(pattern_vec));
         }
     }
 
-    // Two to the right ...
-    let token_node = &arena[ident_node.node.sibling?];
-    let body_node = &arena[token_node.node.sibling?];
-
     // Curried or not?
-    if body_node.kind == ASTKind::Lambda {
-        collect_lambda_args(arena, body_node, args);
+    if let Some(lambda) = Lambda::cast(lambda_node.body()) {
+        collect_lambda_args(&lambda, args);
     }
 
     Some(())
@@ -229,27 +231,25 @@ fn collect_lambda_args<'a>(arena: &Arena<'a>,
 /// 2. The attached doc comment on the entry.
 /// 3. The argument names of any curried functions (pattern functions
 ///    not yet supported).
-fn collect_entry_information<'a>(arena: &Arena<'a>, entry_node: &ASTNode) -> Option<DocItem> {
+fn collect_entry_information(node: &SetEntry<RefRoot<Types>>) -> Option<DocItem> {
     // The "root" of any attribute set entry is this `SetEntry` node.
     // It has an `Attribute` child, which in turn has the identifier
     // (on which the documentation comment is stored) as its child.
-    let attr_node = &arena[entry_node.node.child?];
-    let ident_node = &arena[attr_node.node.child?];
+    let attr_node = node.key();
+    let ident_node = attr_node.path().next().and_then(Ident::cast)?;
 
     // At this point we can retrieve the `DocItem` from the identifier
     // node - this already contains most of the information we are
     // interested in.
-    let doc_item = retrieve_doc_item(ident_node)?;
+    let doc_item = retrieve_doc_item(&ident_node)?;
 
-    // From our entry we can walk two nodes to the right and check
-    // whether we are dealing with a lambda. If so, we can start
-    // collecting the function arguments - otherwise we're done.
-    let assign_node = &arena[attr_node.node.sibling?];
-    let content_node = &arena[assign_node.node.sibling?];
+    // From our entry we check whether we are dealing with a lambda. If so, we
+    // can start collecting the function arguments - otherwise we're done.
+    let content_node = node.value();
 
-    if content_node.kind == ASTKind::Lambda {
+    if let Some(lambda) = Lambda::cast(content_node) {
         let mut args: Vec<Argument> = vec![];
-        collect_lambda_args(arena, content_node, &mut args);
+        collect_lambda_args(&lambda, &mut args);
         Some(DocItem { args, ..doc_item })
     } else {
         Some(doc_item)
@@ -259,11 +259,14 @@ fn collect_entry_information<'a>(arena: &Arena<'a>, entry_node: &ASTNode) -> Opt
 fn main() {
     let opts = Options::from_args();
     let src = fs::read_to_string(&opts.file).unwrap();
-    let nix = rnix::parse(&src).unwrap();
+    let nix = rnix::parse(&src).as_result().unwrap();
 
-    let entries: Vec<ManualEntry> = nix.arena.into_iter()
-        .filter(|node| node.kind == ASTKind::SetEntry)
-        .filter_map(|node| collect_entry_information(&nix.arena, node))
+    let entries: Vec<ManualEntry> = nix.node().borrowed().preorder()
+        .filter_map(|event| match event {
+            WalkEvent::Enter(node) => SetEntry::cast(node),
+            WalkEvent::Leave(_) => None
+        })
+        .filter_map(|node| collect_entry_information(&node))
         .map(|d| ManualEntry {
             category: opts.category.clone(),
             name: d.name,
