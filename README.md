@@ -5,7 +5,8 @@ This tool is (for now) a proof-of-concept to generate documentation
 for Nix library functions from the source files in `nixpkgs/lib`.
 
 It uses [rnix][] to parse Nix source files, which are then transformed
-into a DocBook representation of the function set.
+into a CommonMark (with some syntax extensions) representation of the
+function set.
 
 Please see [this Discourse thread][] for information on the
 documentation format and general discussion.
@@ -54,4 +55,4 @@ This project requires a nightly Rust compiler build.
 [rnix]: https://gitlab.com/jD91mZM2/rnix
 [this Discourse thread]: https://discourse.nixos.org/t/nixpkgs-library-function-documentation-doc-tests/1156
 [this example]: https://storage.googleapis.com/files.tazj.in/nixdoc/manual.html#sec-functions-library-strings
-[issues]: https://github.com/tazjin/nixdoc/issues
+[issues]: https://github.com/nix-community/nixdoc/issues
