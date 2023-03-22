@@ -18,5 +18,9 @@
           drv = self.packages.${system}.default;
           name = "nixdoc";
         };
+
+        devShells.default = pkgs.mkShellNoCC {
+          buildInputs = with pkgs; [ cargo rustfmt ];
+        };
       });
 }
