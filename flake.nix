@@ -19,7 +19,7 @@
           name = "nixdoc";
         };
 
-        devShells.default = pkgs.mkShellNoCC {
+        devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [ cargo rustfmt ];
         };
       });
