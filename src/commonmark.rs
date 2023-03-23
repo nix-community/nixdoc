@@ -16,7 +16,7 @@
 //! This module implements CommonMark output for a struct
 //! representing a single entry in the manual.
 
-use std::io::Write;
+
 use failure::Error;
 
 /// Represent a single function argument name and its (optional)
@@ -91,7 +91,7 @@ impl ManualEntry {
     /// Write a single CommonMark entry for a documented Nix function.
     pub fn write_section(self) -> Result<(), Error> {
         let title = format!("lib.{}.{}", self.category, self.name);
-        let ident = format!("lib.{}.{}", self.category, self.name.replace("'", "-prime"));
+        let ident = format!("lib.{}.{}", self.category, self.name.replace('\'', "-prime"));
 
         println!("## `{}` {{#function-library-{}}}\n", title, ident);
 
