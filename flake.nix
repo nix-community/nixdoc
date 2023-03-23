@@ -10,11 +10,14 @@
   };
   outputs = { self, nixpkgs, flake-compat, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
-      let pkgs = nixpkgs.legacyPackages.${system}; in
+      let
+        pkgs = nixpkgs.legacyPackages.${system};
+        package = (pkgs.lib.importTOML ./Cargo.toml).package;
+      in
       {
         packages.default = pkgs.rustPlatform.buildRustPackage {
-          pname = "nixdoc";
-          version = "1.0.1";
+          pname = package.name;
+          version = package.version;
           src = ./.;
 
           cargoLock = {
@@ -28,7 +31,7 @@
 
         apps.default = flake-utils.lib.mkApp {
           drv = self.packages.${system}.default;
-          name = "nixdoc";
+          name = package.name;
         };
 
         devShells.default = pkgs.mkShell {
