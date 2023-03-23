@@ -21,7 +21,7 @@
 //! * extract line number & add it to generated output
 //! * figure out how to specify examples (& leading whitespace?!)
 
-#[macro_use] extern crate structopt;
+extern crate structopt;
 extern crate failure;
 extern crate rnix;
 
@@ -32,7 +32,7 @@ use rnix::parser::{Arena, ASTNode, ASTKind, Data};
 use rnix::tokenizer::Meta;
 use rnix::tokenizer::Trivia;
 use std::fs;
-use std::io;
+
 use std::path::PathBuf;
 use structopt::StructOpt;
 
@@ -83,7 +83,7 @@ fn retrieve_doc_comment(allow_single_line: bool, meta: &Meta) -> Option<String> 
         }
     }
 
-    return None;
+    None
 }
 
 /// Transforms an AST node into a `DocItem` if it has a leading
@@ -100,7 +100,7 @@ fn retrieve_doc_item(node: &ASTNode) -> Option<DocItem> {
         })
     }
 
-    return None;
+    None
 }
 
 /// *Really* dumb, mutable, hacky doc comment "parser".
@@ -138,7 +138,7 @@ fn parse_doc_comment(raw: &str) -> DocComment {
         }
     }
 
-    let f = |s: String| if s.is_empty() { None } else { Some(s.into()) };
+    let f = |s: String| if s.is_empty() { None } else { Some(s) };
 
     DocComment {
         doc: doc.trim().into(),
@@ -148,7 +148,7 @@ fn parse_doc_comment(raw: &str) -> DocComment {
 }
 
 /// Traverse a pattern argument, collecting its argument names.
-fn collect_pattern_args<'a>(arena: &Arena<'a>,
+fn collect_pattern_args(arena: &Arena,
                             entry: &ASTNode,
                             args: &mut Vec<SingleArg>) -> Option<()> {
     if let Data::Ident(meta, name) = &arena[entry.node.child?].data {
@@ -178,7 +178,7 @@ fn collect_pattern_args<'a>(arena: &Arena<'a>,
 /// immediate child that is the identifier of its argument. The "body"
 /// of the lambda is two steps to the right from that identifier, if
 /// it is a lambda the function is curried and we can recurse.
-fn collect_lambda_args<'a>(arena: &Arena<'a>,
+fn collect_lambda_args(arena: &Arena,
                            lambda_node: &ASTNode,
                            args: &mut Vec<Argument>) -> Option<()> {
     let ident_node = &arena[lambda_node.node.child?];
@@ -227,7 +227,7 @@ fn collect_lambda_args<'a>(arena: &Arena<'a>,
 /// 2. The attached doc comment on the entry.
 /// 3. The argument names of any curried functions (pattern functions
 ///    not yet supported).
-fn collect_entry_information<'a>(arena: &Arena<'a>, entry_node: &ASTNode) -> Option<DocItem> {
+fn collect_entry_information(arena: &Arena, entry_node: &ASTNode) -> Option<DocItem> {
     // The "root" of any attribute set entry is this `SetEntry` node.
     // It has an `Attribute` child, which in turn has the identifier
     // (on which the documentation comment is stored) as its child.
