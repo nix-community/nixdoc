@@ -12,7 +12,19 @@
     flake-utils.lib.eachDefaultSystem (system:
       let pkgs = nixpkgs.legacyPackages.${system}; in
       {
-        packages.default = (pkgs.callPackage ./Cargo.nix { }).nixdoc { };
+        packages.default = pkgs.rustPlatform.buildRustPackage {
+          pname = "nixdoc";
+          version = "1.0.1";
+          src = ./.;
+
+          cargoLock = {
+            lockFile = ./Cargo.lock;
+            outputHashes = {
+              "arenatree-0.1.1" = "sha256-b3VVbYnWsjSjFMxvkfpJt13u+VC6baOIWD4qm1Gco4Q=";
+              "rnix-0.4.1" = "sha256-C1L/qXk6AimH7COrBlqpUA3giftaOYm/qNxs7rQgETA=";
+            };
+          };
+        };
 
         apps.default = flake-utils.lib.mkApp {
           drv = self.packages.${system}.default;
