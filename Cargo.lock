@@ -122,7 +122,7 @@ checksum = "76e3a3ef172f1a0b9a9ff0dd1491ae5e6c948b94479a3021819ba7d860c8645d"
 
 [[package]]
 name = "nixdoc"
-version = "1.0.1"
+version = "2.0.0"
 dependencies = [
  "failure",
  "rnix",
