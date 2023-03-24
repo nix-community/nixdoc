@@ -31,6 +31,7 @@ use self::commonmark::*;
 use rnix::parser::{Arena, ASTNode, ASTKind, Data};
 use rnix::tokenizer::Meta;
 use rnix::tokenizer::Trivia;
+use rnix::tokenizer::TokenKind;
 use std::fs;
 
 use std::path::PathBuf;
@@ -88,13 +89,40 @@ fn retrieve_doc_comment(allow_single_line: bool, meta: &Meta) -> Option<String> 
 
 /// Transforms an AST node into a `DocItem` if it has a leading
 /// documentation comment.
-fn retrieve_doc_item(node: &ASTNode) -> Option<DocItem> {
+fn retrieve_doc_item(arena: &Arena, node: &ASTNode) -> Option<DocItem> {
     // We are only interested in identifiers.
     if let Data::Ident(meta, name) = &node.data {
         let comment = retrieve_doc_comment(false, meta)?;
 
+        // Loop through additional identifier sibling nodes
+        // Makes it detect comments above definitions like `foo.bar.baz = 10`
+        // work correctly
+        let mut current_ident = node;
+        let mut item_name = name.to_string();
+        // If there is a sibling to the current identifier node
+        while let Some(next) = current_ident.node.sibling {
+            // Check if it's a `.` node (just to be sure)
+            let dot_node = &arena[next];
+            if let Data::Token(_, TokenKind::Dot) = &dot_node.data {
+                // Append a dot
+                item_name += ".";
+            } else {
+                // If it's not, exit, not sure when this could happen
+                break;
+            }
+
+            // We expect the next sibling to be the identifier node
+            let next_ident = &arena[dot_node.node.sibling?];
+            if let Data::Ident(_, name) = &next_ident.data {
+                // Append the name of the new identifier
+                item_name += name;
+            } else {
+                break;
+            }
+            current_ident = next_ident;
+        }
         return Some(DocItem {
-            name: name.to_string(),
+            name: item_name,
             comment: parse_doc_comment(&comment),
             args: vec![],
         })
@@ -237,7 +265,7 @@ fn collect_entry_information(arena: &Arena, entry_node: &ASTNode) -> Option<DocI
     // At this point we can retrieve the `DocItem` from the identifier
     // node - this already contains most of the information we are
     // interested in.
-    let doc_item = retrieve_doc_item(ident_node)?;
+    let doc_item = retrieve_doc_item(arena, ident_node)?;
 
     // From our entry we can walk two nodes to the right and check
     // whether we are dealing with a lambda. If so, we can start
