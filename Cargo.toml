@@ -1,6 +1,6 @@
 [package]
 name = "nixdoc"
-version = "2.0.0"
+version = "2.1.0"
 authors = ["Vincent Ambo <mail@tazj.in>", "asymmetric"]
 
 [dependencies]
