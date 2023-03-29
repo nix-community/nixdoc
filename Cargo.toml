@@ -7,7 +7,5 @@ authors = ["Vincent Ambo <mail@tazj.in>", "asymmetric"]
 xml-rs = "0.8"
 structopt = "0.2"
 failure = "0.1"
-
-[dependencies.rnix]
-git = "https://gitlab.com/jD91mZM2/rnix.git"
-rev = "10b86c94291b4864470158ef8750de85ddd8d4ba"
+rnix = "0.11"
+rowan = "0.15.11"

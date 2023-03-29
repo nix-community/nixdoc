@@ -24,14 +24,16 @@
 extern crate structopt;
 extern crate failure;
 extern crate rnix;
+extern crate rowan;
 
 mod commonmark;
 
 use self::commonmark::*;
-use rnix::parser::{Arena, ASTNode, ASTKind, Data};
-use rnix::tokenizer::Meta;
-use rnix::tokenizer::Trivia;
-use rnix::tokenizer::TokenKind;
+use rnix::{
+    SyntaxKind, SyntaxNode,
+    ast::{AstToken, AttrpathValue, AttrSet, Comment, Expr, Lambda, Param}
+};
+use rowan::{WalkEvent, ast::AstNode};
 use std::fs;
 
 use std::path::PathBuf;
@@ -73,62 +75,61 @@ struct DocItem {
     args: Vec<Argument>,
 }
 
-/// Retrieve documentation comments. For now only multiline comments
-/// starting with `@doc` are considered.
-fn retrieve_doc_comment(allow_single_line: bool, meta: &Meta) -> Option<String> {
-    for item in meta.leading.iter() {
-        if let Trivia::Comment { multiline, content, .. } = item {
-            if *multiline || allow_single_line {
-                return Some(content.to_string())
-            }
-        }
+/// Retrieve documentation comments.
+fn retrieve_doc_comment(node: &SyntaxNode) -> Option<String> {
+    // if the current node has a doc comment it'll be immediately preceded by that comment,
+    // or there will be a whitespace token and *then* the comment tokens before it. we merge
+    // multiple single-line comments into one large comment if they are on adjacent lines for
+    // documentation simplicity.
+    let mut token = node.first_token()?.prev_token()?;
+    if token.kind() == SyntaxKind::TOKEN_WHITESPACE {
+        token = token.prev_token()?;
+    }
+    if token.kind() != SyntaxKind::TOKEN_COMMENT {
+        return None;
     }
 
-    None
+    // backtrack to the start of the doc comment, allowing only a single multi-line comment
+    // or adjacent single-line comments.
+    // we don't care much about optimization here, doc comments aren't long enough for that.
+    if token.text().starts_with("/*") {
+        return Some(Comment::cast(token)?.text().to_string());
+    }
+    let mut result = String::new();
+    while let Some(comment) = Comment::cast(token) {
+        result.insert_str(0, comment.text());
+        let ws = match comment.syntax().prev_token() {
+            Some(t) if t.kind() == SyntaxKind::TOKEN_WHITESPACE => t,
+            _ => break,
+        };
+        // only adjacent lines continue a doc comment, empty lines do not.
+        match ws.text().strip_prefix("\n") {
+            Some(trail) if !trail.contains("\n") => result.insert_str(0, ws.text()),
+            _ => break,
+        }
+        token = match ws.prev_token() {
+            Some(c) => c,
+            _ => break,
+        };
+    }
+    Some(result)
 }
 
 /// Transforms an AST node into a `DocItem` if it has a leading
 /// documentation comment.
-fn retrieve_doc_item(arena: &Arena, node: &ASTNode) -> Option<DocItem> {
-    // We are only interested in identifiers.
-    if let Data::Ident(meta, name) = &node.data {
-        let comment = retrieve_doc_comment(false, meta)?;
+fn retrieve_doc_item(node: &AttrpathValue) -> Option<DocItem> {
+    let comment = retrieve_doc_comment(node.syntax())?;
+    let ident = node.attrpath().unwrap();
+    // TODO this should join attrs() with '.' to handle whitespace, dynamic attrs and string
+    // attrs. none of these happen in nixpkgs lib, and the latter two should probably be
+    // rejected entirely.
+    let item_name = ident.to_string();
 
-        // Loop through additional identifier sibling nodes
-        // Makes it detect comments above definitions like `foo.bar.baz = 10`
-        // work correctly
-        let mut current_ident = node;
-        let mut item_name = name.to_string();
-        // If there is a sibling to the current identifier node
-        while let Some(next) = current_ident.node.sibling {
-            // Check if it's a `.` node (just to be sure)
-            let dot_node = &arena[next];
-            if let Data::Token(_, TokenKind::Dot) = &dot_node.data {
-                // Append a dot
-                item_name += ".";
-            } else {
-                // If it's not, exit, not sure when this could happen
-                break;
-            }
-
-            // We expect the next sibling to be the identifier node
-            let next_ident = &arena[dot_node.node.sibling?];
-            if let Data::Ident(_, name) = &next_ident.data {
-                // Append the name of the new identifier
-                item_name += name;
-            } else {
-                break;
-            }
-            current_ident = next_ident;
-        }
-        return Some(DocItem {
-            name: item_name,
-            comment: parse_doc_comment(&comment),
-            args: vec![],
-        })
-    }
-
-    None
+    Some(DocItem {
+        name: item_name,
+        comment: parse_doc_comment(&comment),
+        args: vec![],
+    })
 }
 
 /// *Really* dumb, mutable, hacky doc comment "parser".
@@ -175,77 +176,40 @@ fn parse_doc_comment(raw: &str) -> DocComment {
     }
 }
 
-/// Traverse a pattern argument, collecting its argument names.
-fn collect_pattern_args(arena: &Arena,
-                            entry: &ASTNode,
-                            args: &mut Vec<SingleArg>) -> Option<()> {
-    if let Data::Ident(meta, name) = &arena[entry.node.child?].data {
-        args.push(SingleArg {
-            name: name.to_string(),
-            doc: retrieve_doc_comment(true, meta),
-        });
-    }
-
-    // Recurse, but only if the entry's sibling is also an entry.
-    let next_entry = &arena[entry.node.sibling?];
-    if next_entry.kind == ASTKind::PatEntry {
-        collect_pattern_args(arena, next_entry, args);
-    }
-
-    Some(())
-}
-
 /// Traverse a Nix lambda and collect the identifiers of arguments
 /// until an unexpected AST node is encountered.
-///
-/// This will collect the argument names for curried functions in the
-/// `a: b: c: ...`-style, but does not currently work with pattern
-/// functions (`{ a, b, c }: ...`).
-///
-/// In the AST representation used by rnix, any lambda node has an
-/// immediate child that is the identifier of its argument. The "body"
-/// of the lambda is two steps to the right from that identifier, if
-/// it is a lambda the function is curried and we can recurse.
-fn collect_lambda_args(arena: &Arena,
-                           lambda_node: &ASTNode,
-                           args: &mut Vec<Argument>) -> Option<()> {
-    let ident_node = &arena[lambda_node.node.child?];
+fn collect_lambda_args(mut lambda: Lambda) -> Vec<Argument> {
+    let mut args = vec![];
 
-    // "Flat" function arguments are represented as identifiers, ..
-    if let Data::Ident(meta, name) = &ident_node.data {
-        args.push(Argument::Flat(SingleArg {
-            name: name.to_string(),
-            doc: retrieve_doc_comment(true, meta),
-        }));
-    }
+    loop {
+        match lambda.param().unwrap() {
+            Param::IdentParam(id) => {
+                args.push(Argument::Flat(SingleArg {
+                    name: id.to_string(),
+                    doc: retrieve_doc_comment(id.syntax()),
+                }));
+            },
+            Param::Pattern(pat) => {
+                let pattern_vec: Vec<_> = pat
+                    .pat_entries()
+                    .map(|entry| SingleArg {
+                        name: entry.ident().unwrap().to_string(),
+                        doc: retrieve_doc_comment(entry.syntax()),
+                    })
+                    .collect();
 
-    // ... pattern style arguments are represented as, well, patterns.
-    if ident_node.kind == ASTKind::Pattern {
-        let mut pattern_vec = vec![];
+                args.push(Argument::Pattern(pattern_vec));
+            },
+        }
 
-        // The first child of a pattern is a token representing the
-        // opening curly brace, followed by a sibling chain of
-        // `PatEntry` nodes which each have the identifier as their
-        // first child.
-        let token_node = &arena[ident_node.node.child?];
-        let first_entry = &arena[token_node.node.sibling?];
-        collect_pattern_args(arena, first_entry, &mut pattern_vec);
-
-        if !pattern_vec.is_empty() {
-            args.push(Argument::Pattern(pattern_vec));
+        // Curried or not?
+        match lambda.body() {
+            Some(Expr::Lambda(inner)) => lambda = inner,
+            _ => break,
         }
     }
 
-    // Two to the right ...
-    let token_node = &arena[ident_node.node.sibling?];
-    let body_node = &arena[token_node.node.sibling?];
-
-    // Curried or not?
-    if body_node.kind == ASTKind::Lambda {
-        collect_lambda_args(arena, body_node, args);
-    }
-
-    Some(())
+    args
 }
 
 /// Traverse the arena from a top-level SetEntry and collect, where
@@ -255,28 +219,11 @@ fn collect_lambda_args(arena: &Arena,
 /// 2. The attached doc comment on the entry.
 /// 3. The argument names of any curried functions (pattern functions
 ///    not yet supported).
-fn collect_entry_information(arena: &Arena, entry_node: &ASTNode) -> Option<DocItem> {
-    // The "root" of any attribute set entry is this `SetEntry` node.
-    // It has an `Attribute` child, which in turn has the identifier
-    // (on which the documentation comment is stored) as its child.
-    let attr_node = &arena[entry_node.node.child?];
-    let ident_node = &arena[attr_node.node.child?];
+fn collect_entry_information(entry: AttrpathValue) -> Option<DocItem> {
+    let doc_item = retrieve_doc_item(&entry)?;
 
-    // At this point we can retrieve the `DocItem` from the identifier
-    // node - this already contains most of the information we are
-    // interested in.
-    let doc_item = retrieve_doc_item(arena, ident_node)?;
-
-    // From our entry we can walk two nodes to the right and check
-    // whether we are dealing with a lambda. If so, we can start
-    // collecting the function arguments - otherwise we're done.
-    let assign_node = &arena[attr_node.node.sibling?];
-    let content_node = &arena[assign_node.node.sibling?];
-
-    if content_node.kind == ASTKind::Lambda {
-        let mut args: Vec<Argument> = vec![];
-        collect_lambda_args(arena, content_node, &mut args);
-        Some(DocItem { args, ..doc_item })
+    if let Some(Expr::Lambda(l)) = entry.value() {
+        Some(DocItem { args: collect_lambda_args(l), ..doc_item })
     } else {
         Some(doc_item)
     }
@@ -285,11 +232,17 @@ fn collect_entry_information(arena: &Arena, entry_node: &ASTNode) -> Option<DocI
 fn main() {
     let opts = Options::from_args();
     let src = fs::read_to_string(&opts.file).unwrap();
-    let nix = rnix::parse(&src).unwrap();
+    let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
 
-    let entries: Vec<ManualEntry> = nix.arena.into_iter()
-        .filter(|node| node.kind == ASTKind::SetEntry)
-        .filter_map(|node| collect_entry_information(&nix.arena, node))
+    let entries: Vec<_> = nix.syntax().preorder()
+        .filter_map(|ev| match ev {
+            WalkEvent::Enter(n) => Some(n),
+            _ => None,
+        })
+        .filter_map(AttrSet::cast)
+        .flat_map(|n| n.syntax().children())
+        .filter_map(AttrpathValue::cast)
+        .filter_map(collect_entry_information)
         .map(|d| ManualEntry {
             category: opts.category.clone(),
             name: d.name,
@@ -308,5 +261,4 @@ fn main() {
     for entry in entries {
         entry.write_section().expect("Failed to write section")
     }
-
 }
