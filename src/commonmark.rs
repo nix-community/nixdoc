@@ -18,6 +18,7 @@
 
 
 use failure::Error;
+use std::iter::repeat;
 
 /// Represent a single function argument name and its (optional)
 /// doc-string.
@@ -38,23 +39,31 @@ pub enum Argument {
     Pattern(Vec<SingleArg>),
 }
 
+fn print_indented(indent: usize, text: &str) {
+    let prefix = repeat(' ').take(indent).collect::<String>();
+    print!("{}", text.replace("\r\n", "\n").replace("\n", &format!("\n{prefix}")));
+}
+
 impl Argument {
     /// Write CommonMark structure for a single function argument.
-    fn write_argument(self) -> Result<(), Error> {
+    fn write_argument(self, indent: usize) -> Result<(), Error> {
         match self {
             // Write a flat argument entry.
             Argument::Flat(arg) => {
-                println!("`{}`\n", &arg.name);
-                println!(": {}\n", arg.doc.unwrap_or("Function argument".into()).trim())
+                let arg_text = format!(
+                    "`{}`\n\n: {}\n\n",
+                    arg.name,
+                    arg.doc.unwrap_or("Function argument".into()).trim());
+                print_indented(indent, &arg_text);
             },
 
             // Write a pattern argument entry and its individual
             // parameters as a nested structure.
             Argument::Pattern(pattern_args) => {
-                println!("### pattern - structured function argument\n");
+                print_indented(indent, "structured function argument\n\n: ");
                 for pattern_arg in pattern_args {
                     Argument::Flat(pattern_arg)
-                        .write_argument()?;
+                        .write_argument(indent + 2)?;
                 }
             },
         }
@@ -110,7 +119,7 @@ impl ManualEntry {
         if !self.args.is_empty() {
 
             for arg in self.args {
-                arg.write_argument()?;
+                arg.write_argument(0)?;
             }
         }
 
