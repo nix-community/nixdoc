@@ -21,19 +21,19 @@
 //! * extract line number & add it to generated output
 //! * figure out how to specify examples (& leading whitespace?!)
 
-extern crate structopt;
 extern crate failure;
 extern crate rnix;
 extern crate rowan;
+extern crate structopt;
 
 mod commonmark;
 
 use self::commonmark::*;
 use rnix::{
+    ast::{AstToken, AttrSet, AttrpathValue, Comment, Expr, Lambda, Param},
     SyntaxKind, SyntaxNode,
-    ast::{AstToken, AttrpathValue, AttrSet, Comment, Expr, Lambda, Param}
 };
-use rowan::{WalkEvent, ast::AstNode};
+use rowan::{ast::AstNode, WalkEvent};
 use std::fs;
 
 use std::path::PathBuf;
@@ -41,7 +41,10 @@ use structopt::StructOpt;
 
 /// Command line arguments for nixdoc
 #[derive(Debug, StructOpt)]
-#[structopt(name = "nixdoc", about = "Generate CommonMark from Nix library functions")]
+#[structopt(
+    name = "nixdoc",
+    about = "Generate CommonMark from Nix library functions"
+)]
 struct Options {
     /// Nix file to process.
     #[structopt(short = "f", long = "file", parse(from_os_str))]
@@ -134,7 +137,11 @@ fn retrieve_doc_item(node: &AttrpathValue) -> Option<DocItem> {
 
 /// *Really* dumb, mutable, hacky doc comment "parser".
 fn parse_doc_comment(raw: &str) -> DocComment {
-    enum ParseState { Doc, Type, Example }
+    enum ParseState {
+        Doc,
+        Type,
+        Example,
+    }
 
     let mut doc = String::new();
     let mut doc_type = String::new();
@@ -159,11 +166,11 @@ fn parse_doc_comment(raw: &str) -> DocComment {
             ParseState::Doc => {
                 doc.push_str(line.trim());
                 doc.push('\n');
-            },
+            }
             ParseState::Example => {
                 example.push_str(line.trim());
                 example.push('\n');
-            },
+            }
         }
     }
 
@@ -188,7 +195,7 @@ fn collect_lambda_args(mut lambda: Lambda) -> Vec<Argument> {
                     name: id.to_string(),
                     doc: retrieve_doc_comment(id.syntax()),
                 }));
-            },
+            }
             Param::Pattern(pat) => {
                 let pattern_vec: Vec<_> = pat
                     .pat_entries()
@@ -199,7 +206,7 @@ fn collect_lambda_args(mut lambda: Lambda) -> Vec<Argument> {
                     .collect();
 
                 args.push(Argument::Pattern(pattern_vec));
-            },
+            }
         }
 
         // Curried or not?
@@ -223,7 +230,10 @@ fn collect_entry_information(entry: AttrpathValue) -> Option<DocItem> {
     let doc_item = retrieve_doc_item(&entry)?;
 
     if let Some(Expr::Lambda(l)) = entry.value() {
-        Some(DocItem { args: collect_lambda_args(l), ..doc_item })
+        Some(DocItem {
+            args: collect_lambda_args(l),
+            ..doc_item
+        })
     } else {
         Some(doc_item)
     }
@@ -234,7 +244,9 @@ fn main() {
     let src = fs::read_to_string(&opts.file).unwrap();
     let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
 
-    let entries: Vec<_> = nix.syntax().preorder()
+    let entries: Vec<_> = nix
+        .syntax()
+        .preorder()
         .filter_map(|ev| match ev {
             WalkEvent::Enter(n) => Some(n),
             _ => None,
@@ -246,17 +258,17 @@ fn main() {
         .map(|d| ManualEntry {
             category: opts.category.clone(),
             name: d.name,
-            description: d.comment.doc
-                .split("\n\n")
-                .map(|s| s.to_string())
-                .collect(),
+            description: d.comment.doc.split("\n\n").map(|s| s.to_string()).collect(),
             fn_type: d.comment.doc_type,
             example: d.comment.example,
             args: d.args,
         })
         .collect();
 
-    println!("# {} {{#sec-functions-library-{}}}\n", &opts.description, opts.category);
+    println!(
+        "# {} {{#sec-functions-library-{}}}\n",
+        &opts.description, opts.category
+    );
 
     for entry in entries {
         entry.write_section().expect("Failed to write section")

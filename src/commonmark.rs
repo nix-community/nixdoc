@@ -16,7 +16,6 @@
 //! This module implements CommonMark output for a struct
 //! representing a single entry in the manual.
 
-
 use failure::Error;
 use std::iter::repeat;
 
@@ -41,7 +40,11 @@ pub enum Argument {
 
 fn print_indented(indent: usize, text: &str) {
     let prefix = repeat(' ').take(indent).collect::<String>();
-    print!("{}", text.replace("\r\n", "\n").replace("\n", &format!("\n{prefix}")));
+    print!(
+        "{}",
+        text.replace("\r\n", "\n")
+            .replace("\n", &format!("\n{prefix}"))
+    );
 }
 
 impl Argument {
@@ -53,19 +56,19 @@ impl Argument {
                 let arg_text = format!(
                     "`{}`\n\n: {}\n\n",
                     arg.name,
-                    arg.doc.unwrap_or("Function argument".into()).trim());
+                    arg.doc.unwrap_or("Function argument".into()).trim()
+                );
                 print_indented(indent, &arg_text);
-            },
+            }
 
             // Write a pattern argument entry and its individual
             // parameters as a nested structure.
             Argument::Pattern(pattern_args) => {
                 print_indented(indent, "structured function argument\n\n: ");
                 for pattern_arg in pattern_args {
-                    Argument::Flat(pattern_arg)
-                        .write_argument(indent + 2)?;
+                    Argument::Flat(pattern_arg).write_argument(indent + 2)?;
                 }
-            },
+            }
         }
 
         Ok(())
@@ -100,7 +103,11 @@ impl ManualEntry {
     /// Write a single CommonMark entry for a documented Nix function.
     pub fn write_section(self) -> Result<(), Error> {
         let title = format!("lib.{}.{}", self.category, self.name);
-        let ident = format!("lib.{}.{}", self.category, self.name.replace('\'', "-prime"));
+        let ident = format!(
+            "lib.{}.{}",
+            self.category,
+            self.name.replace('\'', "-prime")
+        );
 
         println!("## `{}` {{#function-library-{}}}\n", title, ident);
 
@@ -117,7 +124,6 @@ impl ManualEntry {
 
         // Function argument names
         if !self.args.is_empty() {
-
             for arg in self.args {
                 arg.write_argument(0)?;
             }
@@ -128,7 +134,10 @@ impl ManualEntry {
         // TODO: In grhmc's version there are multiple (named)
         // examples, how can this be achieved automatically?
         if let Some(example) = &self.example {
-            println!("### {} usage example {{#function-library-example-{}}}\n", title, ident);
+            println!(
+                "### {} usage example {{#function-library-example-{}}}\n",
+                title, ident
+            );
             println!("```nix{}```\n", example);
         }
 
