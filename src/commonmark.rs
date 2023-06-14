@@ -19,6 +19,8 @@
 use failure::Error;
 use std::iter::repeat;
 
+use std::io::Write;
+
 /// Represent a single function argument name and its (optional)
 /// doc-string.
 #[derive(Debug)]
@@ -38,18 +40,21 @@ pub enum Argument {
     Pattern(Vec<SingleArg>),
 }
 
-fn print_indented(indent: usize, text: &str) {
+fn print_indented<W: Write>(writer: &mut W, indent: usize, text: &str) -> Result<(), Error> {
     let prefix = repeat(' ').take(indent).collect::<String>();
-    print!(
+    writeln!(
+        writer,
         "{}",
         text.replace("\r\n", "\n")
             .replace("\n", &format!("\n{prefix}"))
-    );
+    )?;
+
+    Ok(())
 }
 
 impl Argument {
     /// Write CommonMark structure for a single function argument.
-    fn write_argument(self, indent: usize) -> Result<(), Error> {
+    fn write_argument<W: Write>(self, writer: &mut W, indent: usize) -> Result<(), Error> {
         match self {
             // Write a flat argument entry.
             Argument::Flat(arg) => {
@@ -58,15 +63,15 @@ impl Argument {
                     arg.name,
                     arg.doc.unwrap_or("Function argument".into()).trim()
                 );
-                print_indented(indent, &arg_text);
+                print_indented(writer, indent, &arg_text)?;
             }
 
             // Write a pattern argument entry and its individual
             // parameters as a nested structure.
             Argument::Pattern(pattern_args) => {
-                print_indented(indent, "structured function argument\n\n: ");
+                print_indented(writer, indent, "structured function argument\n\n: ")?;
                 for pattern_arg in pattern_args {
-                    Argument::Flat(pattern_arg).write_argument(indent + 2)?;
+                    Argument::Flat(pattern_arg).write_argument(writer, indent + 2)?;
                 }
             }
         }
@@ -101,7 +106,7 @@ pub struct ManualEntry {
 
 impl ManualEntry {
     /// Write a single CommonMark entry for a documented Nix function.
-    pub fn write_section(self) -> Result<(), Error> {
+    pub fn write_section<W: Write>(self, writer: &mut W) -> Result<(), Error> {
         let title = format!("lib.{}.{}", self.category, self.name);
         let ident = format!(
             "lib.{}.{}",
@@ -109,23 +114,23 @@ impl ManualEntry {
             self.name.replace('\'', "-prime")
         );
 
-        println!("## `{}` {{#function-library-{}}}\n", title, ident);
+        writeln!(writer, "## `{}` {{#function-library-{}}}\n", title, ident)?;
 
         // <subtitle> (type signature)
         if let Some(t) = &self.fn_type {
-            println!("`{}`\n", t);
+            writeln!(writer, "`{}`\n", t)?;
         }
 
         // Primary doc string
         // TODO: Split paragraphs?
         for paragraph in &self.description {
-            println!("{}\n", paragraph);
+            writeln!(writer, "{}\n", paragraph)?;
         }
 
         // Function argument names
         if !self.args.is_empty() {
             for arg in self.args {
-                arg.write_argument(0)?;
+                arg.write_argument(writer, 0)?;
             }
         }
 
@@ -134,11 +139,12 @@ impl ManualEntry {
         // TODO: In grhmc's version there are multiple (named)
         // examples, how can this be achieved automatically?
         if let Some(example) = &self.example {
-            println!(
+            writeln!(
+                writer,
                 "### {} usage example {{#function-library-example-{}}}\n",
                 title, ident
-            );
-            println!("```nix{}```\n", example);
+            )?;
+            writeln!(writer, "```nix{}```\n", example)?;
         }
 
         // TODO: add source links

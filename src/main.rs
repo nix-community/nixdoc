@@ -36,6 +36,9 @@ use rnix::{
 use rowan::{ast::AstNode, WalkEvent};
 use std::fs;
 
+use std::io;
+use std::io::Write;
+
 use std::path::PathBuf;
 use structopt::StructOpt;
 
@@ -239,13 +242,8 @@ fn collect_entry_information(entry: AttrpathValue) -> Option<DocItem> {
     }
 }
 
-fn main() {
-    let opts = Options::from_args();
-    let src = fs::read_to_string(&opts.file).unwrap();
-    let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
-
-    let entries: Vec<_> = nix
-        .syntax()
+fn collect_entries(root: rnix::Root, category: &str) -> Vec<ManualEntry> {
+    root.syntax()
         .preorder()
         .filter_map(|ev| match ev {
             WalkEvent::Enter(n) => Some(n),
@@ -256,21 +254,60 @@ fn main() {
         .filter_map(AttrpathValue::cast)
         .filter_map(collect_entry_information)
         .map(|d| ManualEntry {
-            category: opts.category.clone(),
+            category: category.to_string(),
             name: d.name,
             description: d.comment.doc.split("\n\n").map(|s| s.to_string()).collect(),
             fn_type: d.comment.doc_type,
             example: d.comment.example,
             args: d.args,
         })
-        .collect();
+        .collect()
+}
 
-    println!(
+fn main() {
+    let mut output = io::stdout();
+    let opts = Options::from_args();
+    let src = fs::read_to_string(&opts.file).unwrap();
+    let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
+
+    // TODO: move this to commonmark.rs
+    writeln!(
+        output,
         "# {} {{#sec-functions-library-{}}}\n",
         &opts.description, opts.category
-    );
+    )
+    .expect("Failed to write header");
 
-    for entry in entries {
-        entry.write_section().expect("Failed to write section")
+    for entry in collect_entries(nix, &opts.category) {
+        entry
+            .write_section(&mut output)
+            .expect("Failed to write section")
     }
+}
+
+#[test]
+fn test_main() {
+    let mut output = Vec::new();
+    let src = fs::read_to_string("test/strings.nix").unwrap();
+    let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
+    let desc = "string manipulation functions";
+    let category = "strings";
+
+    // TODO: move this to commonmark.rs
+    writeln!(
+        output,
+        "# {} {{#sec-functions-library-{}}}\n",
+        desc, category
+    )
+    .expect("Failed to write header");
+
+    for entry in collect_entries(nix, category) {
+        entry
+            .write_section(&mut output)
+            .expect("Failed to write section")
+    }
+
+    let output = String::from_utf8(output).expect("not utf8");
+
+    insta::assert_snapshot!(output);
 }
