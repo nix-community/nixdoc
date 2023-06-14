@@ -19,13 +19,8 @@
           pname = package.name;
           version = package.version;
           src = ./.;
-
           cargoLock = {
             lockFile = ./Cargo.lock;
-            outputHashes = {
-              "arenatree-0.1.1" = "sha256-b3VVbYnWsjSjFMxvkfpJt13u+VC6baOIWD4qm1Gco4Q=";
-              "rnix-0.4.1" = "sha256-C1L/qXk6AimH7COrBlqpUA3giftaOYm/qNxs7rQgETA=";
-            };
           };
         };
 
