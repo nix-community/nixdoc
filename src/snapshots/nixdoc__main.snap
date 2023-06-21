@@ -10,12 +10,14 @@ expression: output
 
 Concatenate a list of strings.
 
-### lib.strings.concatStrings usage example {#function-library-example-lib.strings.concatStrings}
+::: {.example #function-library-example-lib.strings.concatStrings}
+# `lib.strings.concatStrings` usage example
 
 ```nix
 concatStrings ["foo" "bar"]
 => "foobar"
 ```
+:::
 
 ## `lib.strings.concatMapStrings` {#function-library-lib.strings.concatMapStrings}
 
@@ -33,12 +35,14 @@ Map a function over a list and concatenate the resulting strings.
 : Function argument
 
 
-### lib.strings.concatMapStrings usage example {#function-library-example-lib.strings.concatMapStrings}
+::: {.example #function-library-example-lib.strings.concatMapStrings}
+# `lib.strings.concatMapStrings` usage example
 
 ```nix
 concatMapStrings (x: "a" + x) ["foo" "bar"]
 => "afooabar"
 ```
+:::
 
 ## `lib.strings.concatImapStrings` {#function-library-lib.strings.concatImapStrings}
 
@@ -57,12 +61,14 @@ position as a parameter.
 : Function argument
 
 
-### lib.strings.concatImapStrings usage example {#function-library-example-lib.strings.concatImapStrings}
+::: {.example #function-library-example-lib.strings.concatImapStrings}
+# `lib.strings.concatImapStrings` usage example
 
 ```nix
 concatImapStrings (pos: x: "${toString pos}-${x}") ["foo" "bar"]
 => "1-foo2-bar"
 ```
+:::
 
 ## `lib.strings.intersperse` {#function-library-lib.strings.intersperse}
 
@@ -80,12 +86,14 @@ Place an element between each element of a list
 : Input list
 
 
-### lib.strings.intersperse usage example {#function-library-example-lib.strings.intersperse}
+::: {.example #function-library-example-lib.strings.intersperse}
+# `lib.strings.intersperse` usage example
 
 ```nix
 intersperse "/" ["usr" "local" "bin"]
 => ["usr" "/" "local" "/" "bin"].
 ```
+:::
 
 ## `lib.strings.concatStringsSep` {#function-library-lib.strings.concatStringsSep}
 
@@ -93,12 +101,14 @@ intersperse "/" ["usr" "local" "bin"]
 
 Concatenate a list of strings with a separator between each element
 
-### lib.strings.concatStringsSep usage example {#function-library-example-lib.strings.concatStringsSep}
+::: {.example #function-library-example-lib.strings.concatStringsSep}
+# `lib.strings.concatStringsSep` usage example
 
 ```nix
 concatStringsSep "/" ["usr" "local" "bin"]
 => "usr/local/bin"
 ```
+:::
 
 ## `lib.strings.concatMapStringsSep` {#function-library-lib.strings.concatMapStringsSep}
 
@@ -123,12 +133,14 @@ elements.
 : List of input strings
 
 
-### lib.strings.concatMapStringsSep usage example {#function-library-example-lib.strings.concatMapStringsSep}
+::: {.example #function-library-example-lib.strings.concatMapStringsSep}
+# `lib.strings.concatMapStringsSep` usage example
 
 ```nix
 concatMapStringsSep "-" (x: toUpper x)  ["foo" "bar" "baz"]
 => "FOO-BAR-BAZ"
 ```
+:::
 
 ## `lib.strings.concatImapStringsSep` {#function-library-lib.strings.concatImapStringsSep}
 
@@ -152,12 +164,14 @@ additionally receives the position of its argument.
 : List of input strings
 
 
-### lib.strings.concatImapStringsSep usage example {#function-library-example-lib.strings.concatImapStringsSep}
+::: {.example #function-library-example-lib.strings.concatImapStringsSep}
+# `lib.strings.concatImapStringsSep` usage example
 
 ```nix
 concatImapStringsSep "-" (pos: x: toString (x / pos)) [ 6 6 6 ]
 => "6-3-2"
 ```
+:::
 
 ## `lib.strings.concatLines` {#function-library-lib.strings.concatLines}
 
@@ -166,12 +180,14 @@ concatImapStringsSep "-" (pos: x: toString (x / pos)) [ 6 6 6 ]
 Concatenate a list of strings, adding a newline at the end of each one.
 Defined as `concatMapStrings (s: s + "\n")`.
 
-### lib.strings.concatLines usage example {#function-library-example-lib.strings.concatLines}
+::: {.example #function-library-example-lib.strings.concatLines}
+# `lib.strings.concatLines` usage example
 
 ```nix
 concatLines [ "foo" "bar" ]
 => "foo\nbar\n"
 ```
+:::
 
 ## `lib.strings.makeSearchPath` {#function-library-lib.strings.makeSearchPath}
 
@@ -190,7 +206,8 @@ the given `subDir` appended to each of the given paths.
 : List of base paths
 
 
-### lib.strings.makeSearchPath usage example {#function-library-example-lib.strings.makeSearchPath}
+::: {.example #function-library-example-lib.strings.makeSearchPath}
+# `lib.strings.makeSearchPath` usage example
 
 ```nix
 makeSearchPath "bin" ["/root" "/usr" "/usr/local"]
@@ -198,6 +215,7 @@ makeSearchPath "bin" ["/root" "/usr" "/usr/local"]
 makeSearchPath "bin" [""]
 => "/bin"
 ```
+:::
 
 ## `lib.strings.makeSearchPathOutput` {#function-library-lib.strings.makeSearchPathOutput}
 
@@ -223,19 +241,22 @@ the default.
 : List of packages
 
 
-### lib.strings.makeSearchPathOutput usage example {#function-library-example-lib.strings.makeSearchPathOutput}
+::: {.example #function-library-example-lib.strings.makeSearchPathOutput}
+# `lib.strings.makeSearchPathOutput` usage example
 
 ```nix
 makeSearchPathOutput "dev" "bin" [ pkgs.openssl pkgs.zlib ]
 => "/nix/store/9rz8gxhzf8sw4kf2j2f1grr49w8zx5vj-openssl-1.0.1r-dev/bin:/nix/store/wwh7mhwh269sfjkm6k5665b5kgp7jrk2-zlib-1.2.8/bin"
 ```
+:::
 
 ## `lib.strings.makeLibraryPath` {#function-library-lib.strings.makeLibraryPath}
 
 Construct a library search path (such as RPATH) containing the
 libraries for a set of packages
 
-### lib.strings.makeLibraryPath usage example {#function-library-example-lib.strings.makeLibraryPath}
+::: {.example #function-library-example-lib.strings.makeLibraryPath}
+# `lib.strings.makeLibraryPath` usage example
 
 ```nix
 makeLibraryPath [ "/usr" "/usr/local" ]
@@ -244,18 +265,21 @@ pkgs = import <nixpkgs> { }
 makeLibraryPath [ pkgs.openssl pkgs.zlib ]
 => "/nix/store/9rz8gxhzf8sw4kf2j2f1grr49w8zx5vj-openssl-1.0.1r/lib:/nix/store/wwh7mhwh269sfjkm6k5665b5kgp7jrk2-zlib-1.2.8/lib"
 ```
+:::
 
 ## `lib.strings.makeBinPath` {#function-library-lib.strings.makeBinPath}
 
 Construct a binary search path (such as $PATH) containing the
 binaries for a set of packages.
 
-### lib.strings.makeBinPath usage example {#function-library-example-lib.strings.makeBinPath}
+::: {.example #function-library-example-lib.strings.makeBinPath}
+# `lib.strings.makeBinPath` usage example
 
 ```nix
 makeBinPath ["/root" "/usr" "/usr/local"]
 => "/root/bin:/usr/bin:/usr/local/bin"
 ```
+:::
 
 ## `lib.strings.normalizePath` {#function-library-lib.strings.normalizePath}
 
@@ -268,12 +292,14 @@ Normalize path, removing extraneous /s
 : Function argument
 
 
-### lib.strings.normalizePath usage example {#function-library-example-lib.strings.normalizePath}
+::: {.example #function-library-example-lib.strings.normalizePath}
+# `lib.strings.normalizePath` usage example
 
 ```nix
 normalizePath "/a//b///c/"
 => "/a/b/c/"
 ```
+:::
 
 ## `lib.strings.optionalString` {#function-library-lib.strings.optionalString}
 
@@ -292,7 +318,8 @@ or the empty string. Useful to concatenate against a bigger string.
 : String to return if condition is true
 
 
-### lib.strings.optionalString usage example {#function-library-example-lib.strings.optionalString}
+::: {.example #function-library-example-lib.strings.optionalString}
+# `lib.strings.optionalString` usage example
 
 ```nix
 optionalString true "some-string"
@@ -300,6 +327,7 @@ optionalString true "some-string"
 optionalString false "some-string"
 => ""
 ```
+:::
 
 ## `lib.strings.hasPrefix` {#function-library-lib.strings.hasPrefix}
 
@@ -317,7 +345,8 @@ Determine whether a string has given prefix.
 : Input string
 
 
-### lib.strings.hasPrefix usage example {#function-library-example-lib.strings.hasPrefix}
+::: {.example #function-library-example-lib.strings.hasPrefix}
+# `lib.strings.hasPrefix` usage example
 
 ```nix
 hasPrefix "foo" "foobar"
@@ -325,6 +354,7 @@ hasPrefix "foo" "foobar"
 hasPrefix "foo" "barfoo"
 => false
 ```
+:::
 
 ## `lib.strings.hasSuffix` {#function-library-lib.strings.hasSuffix}
 
@@ -342,7 +372,8 @@ Determine whether a string has given suffix.
 : Input string
 
 
-### lib.strings.hasSuffix usage example {#function-library-example-lib.strings.hasSuffix}
+::: {.example #function-library-example-lib.strings.hasSuffix}
+# `lib.strings.hasSuffix` usage example
 
 ```nix
 hasSuffix "foo" "foobar"
@@ -350,6 +381,7 @@ hasSuffix "foo" "foobar"
 hasSuffix "foo" "barfoo"
 => true
 ```
+:::
 
 ## `lib.strings.hasInfix` {#function-library-lib.strings.hasInfix}
 
@@ -367,7 +399,8 @@ Determine whether a string contains the given infix
 : Function argument
 
 
-### lib.strings.hasInfix usage example {#function-library-example-lib.strings.hasInfix}
+::: {.example #function-library-example-lib.strings.hasInfix}
+# `lib.strings.hasInfix` usage example
 
 ```nix
 hasInfix "bc" "abcd"
@@ -379,6 +412,7 @@ hasInfix "cd" "abcd"
 hasInfix "foo" "abcd"
 => false
 ```
+:::
 
 ## `lib.strings.stringToCharacters` {#function-library-lib.strings.stringToCharacters}
 
@@ -397,7 +431,8 @@ handle unicode.
 : Function argument
 
 
-### lib.strings.stringToCharacters usage example {#function-library-example-lib.strings.stringToCharacters}
+::: {.example #function-library-example-lib.strings.stringToCharacters}
+# `lib.strings.stringToCharacters` usage example
 
 ```nix
 stringToCharacters ""
@@ -407,6 +442,7 @@ stringToCharacters "abc"
 stringToCharacters "🦄"
 => [ "�" "�" "�" "�" ]
 ```
+:::
 
 ## `lib.strings.stringAsChars` {#function-library-lib.strings.stringAsChars}
 
@@ -425,12 +461,14 @@ strings before concatenating the results.
 : Input string
 
 
-### lib.strings.stringAsChars usage example {#function-library-example-lib.strings.stringAsChars}
+::: {.example #function-library-example-lib.strings.stringAsChars}
+# `lib.strings.stringAsChars` usage example
 
 ```nix
 stringAsChars (x: if x == "a" then "i" else x) "nax"
 => "nix"
 ```
+:::
 
 ## `lib.strings.charToInt` {#function-library-lib.strings.charToInt}
 
@@ -443,7 +481,8 @@ Convert char to ascii value, must be in printable range
 : Function argument
 
 
-### lib.strings.charToInt usage example {#function-library-example-lib.strings.charToInt}
+::: {.example #function-library-example-lib.strings.charToInt}
+# `lib.strings.charToInt` usage example
 
 ```nix
 charToInt "A"
@@ -451,6 +490,7 @@ charToInt "A"
 charToInt "("
 => 40
 ```
+:::
 
 ## `lib.strings.escape` {#function-library-lib.strings.escape}
 
@@ -464,12 +504,14 @@ prefixing it with a backslash.
 : Function argument
 
 
-### lib.strings.escape usage example {#function-library-example-lib.strings.escape}
+::: {.example #function-library-example-lib.strings.escape}
+# `lib.strings.escape` usage example
 
 ```nix
 escape ["(" ")"] "(foo)"
 => "\\(foo\\)"
 ```
+:::
 
 ## `lib.strings.escapeC` {#function-library-lib.strings.escapeC}
 
@@ -484,12 +526,14 @@ Only works for printable ascii characters.
 : Function argument
 
 
-### lib.strings.escapeC usage example {#function-library-example-lib.strings.escapeC}
+::: {.example #function-library-example-lib.strings.escapeC}
+# `lib.strings.escapeC` usage example
 
 ```nix
 escapeC [" "] "foo bar"
 => "foo\\x20bar"
 ```
+:::
 
 ## `lib.strings.escapeURL` {#function-library-lib.strings.escapeURL}
 
@@ -498,12 +542,14 @@ escapeC [" "] "foo bar"
 Escape the string so it can be safely placed inside a URL
 query.
 
-### lib.strings.escapeURL usage example {#function-library-example-lib.strings.escapeURL}
+::: {.example #function-library-example-lib.strings.escapeURL}
+# `lib.strings.escapeURL` usage example
 
 ```nix
 escapeURL "foo/bar baz"
 => "foo%2Fbar%20baz"
 ```
+:::
 
 ## `lib.strings.escapeShellArg` {#function-library-lib.strings.escapeShellArg}
 
@@ -516,12 +562,14 @@ Quote string to be used safely within the Bourne shell.
 : Function argument
 
 
-### lib.strings.escapeShellArg usage example {#function-library-example-lib.strings.escapeShellArg}
+::: {.example #function-library-example-lib.strings.escapeShellArg}
+# `lib.strings.escapeShellArg` usage example
 
 ```nix
 escapeShellArg "esc'ape\nme"
 => "'esc'\\''ape\nme'"
 ```
+:::
 
 ## `lib.strings.escapeShellArgs` {#function-library-lib.strings.escapeShellArgs}
 
@@ -529,12 +577,14 @@ escapeShellArg "esc'ape\nme"
 
 Quote all arguments to be safely passed to the Bourne shell.
 
-### lib.strings.escapeShellArgs usage example {#function-library-example-lib.strings.escapeShellArgs}
+::: {.example #function-library-example-lib.strings.escapeShellArgs}
+# `lib.strings.escapeShellArgs` usage example
 
 ```nix
 escapeShellArgs ["one" "two three" "four'five"]
 => "'one' 'two three' 'four'\\''five'"
 ```
+:::
 
 ## `lib.strings.isValidPosixName` {#function-library-lib.strings.isValidPosixName}
 
@@ -547,7 +597,8 @@ Test whether the given name is a valid POSIX shell variable name.
 : Function argument
 
 
-### lib.strings.isValidPosixName usage example {#function-library-example-lib.strings.isValidPosixName}
+::: {.example #function-library-example-lib.strings.isValidPosixName}
+# `lib.strings.isValidPosixName` usage example
 
 ```nix
 isValidPosixName "foo_bar000"
@@ -555,6 +606,7 @@ isValidPosixName "foo_bar000"
 isValidPosixName "0-bad.jpg"
 => false
 ```
+:::
 
 ## `lib.strings.toShellVar` {#function-library-lib.strings.toShellVar}
 
@@ -580,7 +632,8 @@ assume a shell that understands Bash syntax (e.g. Bash or ZSH).
 : Function argument
 
 
-### lib.strings.toShellVar usage example {#function-library-example-lib.strings.toShellVar}
+::: {.example #function-library-example-lib.strings.toShellVar}
+# `lib.strings.toShellVar` usage example
 
 ```nix
 ''
@@ -588,6 +641,7 @@ ${toShellVar "foo" "some string"}
 [[ "$foo" == "some string" ]]
 ''
 ```
+:::
 
 ## `lib.strings.toShellVars` {#function-library-lib.strings.toShellVars}
 
@@ -601,7 +655,8 @@ using `toShellVar`.
 : Function argument
 
 
-### lib.strings.toShellVars usage example {#function-library-example-lib.strings.toShellVars}
+::: {.example #function-library-example-lib.strings.toShellVars}
+# `lib.strings.toShellVars` usage example
 
 ```nix
 let
@@ -612,6 +667,7 @@ ${toShellVars { inherit foo bar; }}
 [[ "$foo" == "$bar" ]]
 ''
 ```
+:::
 
 ## `lib.strings.escapeNixString` {#function-library-lib.strings.escapeNixString}
 
@@ -624,12 +680,14 @@ Turn a string into a Nix expression representing that string
 : Function argument
 
 
-### lib.strings.escapeNixString usage example {#function-library-example-lib.strings.escapeNixString}
+::: {.example #function-library-example-lib.strings.escapeNixString}
+# `lib.strings.escapeNixString` usage example
 
 ```nix
 escapeNixString "hello\${}\n"
 => "\"hello\\\${}\\n\""
 ```
+:::
 
 ## `lib.strings.escapeRegex` {#function-library-lib.strings.escapeRegex}
 
@@ -637,12 +695,14 @@ escapeNixString "hello\${}\n"
 
 Turn a string into an exact regular expression
 
-### lib.strings.escapeRegex usage example {#function-library-example-lib.strings.escapeRegex}
+::: {.example #function-library-example-lib.strings.escapeRegex}
+# `lib.strings.escapeRegex` usage example
 
 ```nix
 escapeRegex "[^a-z]*"
 => "\\[\\^a-z]\\*"
 ```
+:::
 
 ## `lib.strings.escapeNixIdentifier` {#function-library-lib.strings.escapeNixIdentifier}
 
@@ -655,7 +715,8 @@ Quotes a string if it can't be used as an identifier directly.
 : Function argument
 
 
-### lib.strings.escapeNixIdentifier usage example {#function-library-example-lib.strings.escapeNixIdentifier}
+::: {.example #function-library-example-lib.strings.escapeNixIdentifier}
+# `lib.strings.escapeNixIdentifier` usage example
 
 ```nix
 escapeNixIdentifier "hello"
@@ -663,6 +724,7 @@ escapeNixIdentifier "hello"
 escapeNixIdentifier "0abc"
 => "\"0abc\""
 ```
+:::
 
 ## `lib.strings.escapeXML` {#function-library-lib.strings.escapeXML}
 
@@ -671,12 +733,14 @@ escapeNixIdentifier "0abc"
 Escapes a string such that it is safe to include verbatim in an XML
 document.
 
-### lib.strings.escapeXML usage example {#function-library-example-lib.strings.escapeXML}
+::: {.example #function-library-example-lib.strings.escapeXML}
+# `lib.strings.escapeXML` usage example
 
 ```nix
 escapeXML ''"test" 'test' < & >''
 => "&quot;test&quot; &apos;test&apos; &lt; &amp; &gt;"
 ```
+:::
 
 ## `lib.strings.replaceChars` {#function-library-lib.strings.replaceChars}
 
@@ -692,12 +756,14 @@ Case conversion utilities.
 
 Converts an ASCII string to lower-case.
 
-### lib.strings.toLower usage example {#function-library-example-lib.strings.toLower}
+::: {.example #function-library-example-lib.strings.toLower}
+# `lib.strings.toLower` usage example
 
 ```nix
 toLower "HOME"
 => "home"
 ```
+:::
 
 ## `lib.strings.toUpper` {#function-library-lib.strings.toUpper}
 
@@ -705,12 +771,14 @@ toLower "HOME"
 
 Converts an ASCII string to upper-case.
 
-### lib.strings.toUpper usage example {#function-library-example-lib.strings.toUpper}
+::: {.example #function-library-example-lib.strings.toUpper}
+# `lib.strings.toUpper` usage example
 
 ```nix
 toUpper "home"
 => "HOME"
 ```
+:::
 
 ## `lib.strings.addContextFrom` {#function-library-lib.strings.addContextFrom}
 
@@ -732,13 +800,15 @@ inputSrcs.
 : Function argument
 
 
-### lib.strings.addContextFrom usage example {#function-library-example-lib.strings.addContextFrom}
+::: {.example #function-library-example-lib.strings.addContextFrom}
+# `lib.strings.addContextFrom` usage example
 
 ```nix
 pkgs = import <nixpkgs> { };
 addContextFrom pkgs.coreutils "bar"
 => "bar"
 ```
+:::
 
 ## `lib.strings.splitString` {#function-library-lib.strings.splitString}
 
@@ -755,7 +825,8 @@ were separated by this separator.
 : Function argument
 
 
-### lib.strings.splitString usage example {#function-library-example-lib.strings.splitString}
+::: {.example #function-library-example-lib.strings.splitString}
+# `lib.strings.splitString` usage example
 
 ```nix
 splitString "." "foo.bar.baz"
@@ -763,6 +834,7 @@ splitString "." "foo.bar.baz"
 splitString "/" "/usr/local/bin"
 => [ "" "usr" "local" "bin" ]
 ```
+:::
 
 ## `lib.strings.removePrefix` {#function-library-lib.strings.removePrefix}
 
@@ -780,7 +852,8 @@ Return a string without the specified prefix, if the prefix matches.
 : Input string
 
 
-### lib.strings.removePrefix usage example {#function-library-example-lib.strings.removePrefix}
+::: {.example #function-library-example-lib.strings.removePrefix}
+# `lib.strings.removePrefix` usage example
 
 ```nix
 removePrefix "foo." "foo.bar.baz"
@@ -788,6 +861,7 @@ removePrefix "foo." "foo.bar.baz"
 removePrefix "xxx" "foo.bar.baz"
 => "foo.bar.baz"
 ```
+:::
 
 ## `lib.strings.removeSuffix` {#function-library-lib.strings.removeSuffix}
 
@@ -805,7 +879,8 @@ Return a string without the specified suffix, if the suffix matches.
 : Input string
 
 
-### lib.strings.removeSuffix usage example {#function-library-example-lib.strings.removeSuffix}
+::: {.example #function-library-example-lib.strings.removeSuffix}
+# `lib.strings.removeSuffix` usage example
 
 ```nix
 removeSuffix "front" "homefront"
@@ -813,6 +888,7 @@ removeSuffix "front" "homefront"
 removeSuffix "xxx" "homefront"
 => "homefront"
 ```
+:::
 
 ## `lib.strings.versionOlder` {#function-library-lib.strings.versionOlder}
 
@@ -828,7 +904,8 @@ Return true if string v1 denotes a version older than v2.
 : Function argument
 
 
-### lib.strings.versionOlder usage example {#function-library-example-lib.strings.versionOlder}
+::: {.example #function-library-example-lib.strings.versionOlder}
+# `lib.strings.versionOlder` usage example
 
 ```nix
 versionOlder "1.1" "1.2"
@@ -836,6 +913,7 @@ versionOlder "1.1" "1.2"
 versionOlder "1.1" "1.1"
 => false
 ```
+:::
 
 ## `lib.strings.versionAtLeast` {#function-library-lib.strings.versionAtLeast}
 
@@ -851,7 +929,8 @@ Return true if string v1 denotes a version equal to or newer than v2.
 : Function argument
 
 
-### lib.strings.versionAtLeast usage example {#function-library-example-lib.strings.versionAtLeast}
+::: {.example #function-library-example-lib.strings.versionAtLeast}
+# `lib.strings.versionAtLeast` usage example
 
 ```nix
 versionAtLeast "1.1" "1.0"
@@ -861,6 +940,7 @@ versionAtLeast "1.1" "1.1"
 versionAtLeast "1.1" "1.2"
 => false
 ```
+:::
 
 ## `lib.strings.getName` {#function-library-lib.strings.getName}
 
@@ -873,7 +953,8 @@ argument.
 : Function argument
 
 
-### lib.strings.getName usage example {#function-library-example-lib.strings.getName}
+::: {.example #function-library-example-lib.strings.getName}
+# `lib.strings.getName` usage example
 
 ```nix
 getName "youtube-dl-2016.01.01"
@@ -881,6 +962,7 @@ getName "youtube-dl-2016.01.01"
 getName pkgs.youtube-dl
 => "youtube-dl"
 ```
+:::
 
 ## `lib.strings.getVersion` {#function-library-lib.strings.getVersion}
 
@@ -893,7 +975,8 @@ argument.
 : Function argument
 
 
-### lib.strings.getVersion usage example {#function-library-example-lib.strings.getVersion}
+::: {.example #function-library-example-lib.strings.getVersion}
+# `lib.strings.getVersion` usage example
 
 ```nix
 getVersion "youtube-dl-2016.01.01"
@@ -901,6 +984,7 @@ getVersion "youtube-dl-2016.01.01"
 getVersion pkgs.youtube-dl
 => "2016.01.01"
 ```
+:::
 
 ## `lib.strings.nameFromURL` {#function-library-lib.strings.nameFromURL}
 
@@ -917,7 +1001,8 @@ supposed to start extension.
 : Function argument
 
 
-### lib.strings.nameFromURL usage example {#function-library-example-lib.strings.nameFromURL}
+::: {.example #function-library-example-lib.strings.nameFromURL}
+# `lib.strings.nameFromURL` usage example
 
 ```nix
 nameFromURL "https://nixos.org/releases/nix/nix-1.7/nix-1.7-x86_64-linux.tar.bz2" "-"
@@ -925,6 +1010,7 @@ nameFromURL "https://nixos.org/releases/nix/nix-1.7/nix-1.7-x86_64-linux.tar.bz2
 nameFromURL "https://nixos.org/releases/nix/nix-1.7/nix-1.7-x86_64-linux.tar.bz2" "_"
 => "nix-1.7-x86"
 ```
+:::
 
 ## `lib.strings.mesonOption` {#function-library-lib.strings.mesonOption}
 
@@ -943,12 +1029,14 @@ invocations.
 : Function argument
 
 
-### lib.strings.mesonOption usage example {#function-library-example-lib.strings.mesonOption}
+::: {.example #function-library-example-lib.strings.mesonOption}
+# `lib.strings.mesonOption` usage example
 
 ```nix
 mesonOption "engine" "opengl"
 => "-Dengine=opengl"
 ```
+:::
 
 ## `lib.strings.mesonBool` {#function-library-lib.strings.mesonBool}
 
@@ -967,7 +1055,8 @@ Meson invocations.
 : Function argument
 
 
-### lib.strings.mesonBool usage example {#function-library-example-lib.strings.mesonBool}
+::: {.example #function-library-example-lib.strings.mesonBool}
+# `lib.strings.mesonBool` usage example
 
 ```nix
 mesonBool "hardened" true
@@ -975,6 +1064,7 @@ mesonBool "hardened" true
 mesonBool "static" false
 => "-Dstatic=false"
 ```
+:::
 
 ## `lib.strings.mesonEnable` {#function-library-lib.strings.mesonEnable}
 
@@ -993,7 +1083,8 @@ typical Meson invocations.
 : Function argument
 
 
-### lib.strings.mesonEnable usage example {#function-library-example-lib.strings.mesonEnable}
+::: {.example #function-library-example-lib.strings.mesonEnable}
+# `lib.strings.mesonEnable` usage example
 
 ```nix
 mesonEnable "docs" true
@@ -1001,6 +1092,7 @@ mesonEnable "docs" true
 mesonEnable "savage" false
 => "-Dsavage=disabled"
 ```
+:::
 
 ## `lib.strings.enableFeature` {#function-library-lib.strings.enableFeature}
 
@@ -1017,7 +1109,8 @@ standard GNU Autoconf scripts.
 : Function argument
 
 
-### lib.strings.enableFeature usage example {#function-library-example-lib.strings.enableFeature}
+::: {.example #function-library-example-lib.strings.enableFeature}
+# `lib.strings.enableFeature` usage example
 
 ```nix
 enableFeature true "shared"
@@ -1025,6 +1118,7 @@ enableFeature true "shared"
 enableFeature false "shared"
 => "--disable-shared"
 ```
+:::
 
 ## `lib.strings.enableFeatureAs` {#function-library-lib.strings.enableFeatureAs}
 
@@ -1046,7 +1140,8 @@ standard GNU Autoconf scripts.
 : Function argument
 
 
-### lib.strings.enableFeatureAs usage example {#function-library-example-lib.strings.enableFeatureAs}
+::: {.example #function-library-example-lib.strings.enableFeatureAs}
+# `lib.strings.enableFeatureAs` usage example
 
 ```nix
 enableFeatureAs true "shared" "foo"
@@ -1054,6 +1149,7 @@ enableFeatureAs true "shared" "foo"
 enableFeatureAs false "shared" (throw "ignored")
 => "--disable-shared"
 ```
+:::
 
 ## `lib.strings.withFeature` {#function-library-lib.strings.withFeature}
 
@@ -1070,7 +1166,8 @@ standard GNU Autoconf scripts.
 : Function argument
 
 
-### lib.strings.withFeature usage example {#function-library-example-lib.strings.withFeature}
+::: {.example #function-library-example-lib.strings.withFeature}
+# `lib.strings.withFeature` usage example
 
 ```nix
 withFeature true "shared"
@@ -1078,6 +1175,7 @@ withFeature true "shared"
 withFeature false "shared"
 => "--without-shared"
 ```
+:::
 
 ## `lib.strings.withFeatureAs` {#function-library-lib.strings.withFeatureAs}
 
@@ -1099,7 +1197,8 @@ standard GNU Autoconf scripts.
 : Function argument
 
 
-### lib.strings.withFeatureAs usage example {#function-library-example-lib.strings.withFeatureAs}
+::: {.example #function-library-example-lib.strings.withFeatureAs}
+# `lib.strings.withFeatureAs` usage example
 
 ```nix
 withFeatureAs true "shared" "foo"
@@ -1107,6 +1206,7 @@ withFeatureAs true "shared" "foo"
 withFeatureAs false "shared" (throw "ignored")
 => "--without-shared"
 ```
+:::
 
 ## `lib.strings.fixedWidthString` {#function-library-lib.strings.fixedWidthString}
 
@@ -1133,12 +1233,14 @@ requested length.
 : Function argument
 
 
-### lib.strings.fixedWidthString usage example {#function-library-example-lib.strings.fixedWidthString}
+::: {.example #function-library-example-lib.strings.fixedWidthString}
+# `lib.strings.fixedWidthString` usage example
 
 ```nix
 fixedWidthString 5 "0" (toString 15)
 => "00015"
 ```
+:::
 
 ## `lib.strings.fixedWidthNumber` {#function-library-lib.strings.fixedWidthNumber}
 
@@ -1154,12 +1256,14 @@ Format a number adding leading zeroes up to fixed width.
 : Function argument
 
 
-### lib.strings.fixedWidthNumber usage example {#function-library-example-lib.strings.fixedWidthNumber}
+::: {.example #function-library-example-lib.strings.fixedWidthNumber}
+# `lib.strings.fixedWidthNumber` usage example
 
 ```nix
 fixedWidthNumber 5 15
 => "00015"
 ```
+:::
 
 ## `lib.strings.floatToString` {#function-library-lib.strings.floatToString}
 
@@ -1171,7 +1275,8 @@ during the conversion
 : Function argument
 
 
-### lib.strings.floatToString usage example {#function-library-example-lib.strings.floatToString}
+::: {.example #function-library-example-lib.strings.floatToString}
+# `lib.strings.floatToString` usage example
 
 ```nix
 floatToString 0.000001
@@ -1180,6 +1285,7 @@ floatToString 0.0000001
 => trace: warning: Imprecise conversion from float to string 0.000000
 "0.000000"
 ```
+:::
 
 ## `lib.strings.isCoercibleToString` {#function-library-lib.strings.isCoercibleToString}
 
@@ -1220,7 +1326,8 @@ Check whether a value is a store path.
 : Function argument
 
 
-### lib.strings.isStorePath usage example {#function-library-example-lib.strings.isStorePath}
+::: {.example #function-library-example-lib.strings.isStorePath}
+# `lib.strings.isStorePath` usage example
 
 ```nix
 isStorePath "/nix/store/d945ibfx9x185xf04b890y4f9g3cbb63-python-2.7.11/bin/python"
@@ -1232,6 +1339,7 @@ isStorePath pkgs.python
 isStorePath [] || isStorePath 42 || isStorePath {} || …
 => false
 ```
+:::
 
 ## `lib.strings.toInt` {#function-library-lib.strings.toInt}
 
@@ -1245,10 +1353,10 @@ ambiguity between zero-padded and octal numbers. See toIntBase10.
 : Function argument
 
 
-### lib.strings.toInt usage example {#function-library-example-lib.strings.toInt}
+::: {.example #function-library-example-lib.strings.toInt}
+# `lib.strings.toInt` usage example
 
 ```nix
-
 toInt "1337"
 => 1337
 
@@ -1264,6 +1372,7 @@ toInt "00024"
 toInt "3.14"
 => error: floating point JSON numbers are not supported
 ```
+:::
 
 ## `lib.strings.toIntBase10` {#function-library-lib.strings.toIntBase10}
 
@@ -1276,7 +1385,8 @@ Parse a string as a base 10 int. This supports parsing of zero-padded integers.
 : Function argument
 
 
-### lib.strings.toIntBase10 usage example {#function-library-example-lib.strings.toIntBase10}
+::: {.example #function-library-example-lib.strings.toIntBase10}
+# `lib.strings.toIntBase10` usage example
 
 ```nix
 toIntBase10 "1337"
@@ -1294,6 +1404,7 @@ toIntBase10 "00024"
 toIntBase10 "3.14"
 => error: floating point JSON numbers are not supported
 ```
+:::
 
 ## `lib.strings.readPathsFromFile` {#function-library-lib.strings.readPathsFromFile}
 
@@ -1303,7 +1414,8 @@ Whitespace is significant.
 
 NOTE: This function is not performant and should be avoided.
 
-### lib.strings.readPathsFromFile usage example {#function-library-example-lib.strings.readPathsFromFile}
+::: {.example #function-library-example-lib.strings.readPathsFromFile}
+# `lib.strings.readPathsFromFile` usage example
 
 ```nix
 readPathsFromFile /prefix
@@ -1314,6 +1426,7 @@ readPathsFromFile /prefix
 "/prefix/nix-profiles-library-paths.patch"
 "/prefix/compose-search-path.patch" ]
 ```
+:::
 
 ## `lib.strings.fileContents` {#function-library-lib.strings.fileContents}
 
@@ -1326,7 +1439,8 @@ Read the contents of a file removing the trailing \n
 : Function argument
 
 
-### lib.strings.fileContents usage example {#function-library-example-lib.strings.fileContents}
+::: {.example #function-library-example-lib.strings.fileContents}
+# `lib.strings.fileContents` usage example
 
 ```nix
 $ echo "1.0" > ./version
@@ -1334,6 +1448,7 @@ $ echo "1.0" > ./version
 fileContents ./version
 => "1.0"
 ```
+:::
 
 ## `lib.strings.sanitizeDerivationName` {#function-library-lib.strings.sanitizeDerivationName}
 
@@ -1341,7 +1456,8 @@ fileContents ./version
 
 Creates a valid derivation name from a potentially invalid one.
 
-### lib.strings.sanitizeDerivationName usage example {#function-library-example-lib.strings.sanitizeDerivationName}
+::: {.example #function-library-example-lib.strings.sanitizeDerivationName}
+# `lib.strings.sanitizeDerivationName` usage example
 
 ```nix
 sanitizeDerivationName "../hello.bar # foo"
@@ -1351,6 +1467,7 @@ sanitizeDerivationName ""
 sanitizeDerivationName pkgs.hello
 => "-nix-store-2g75chlbpxlrqn15zlby2dfh8hr9qwbk-hello-2.10"
 ```
+:::
 
 ## `lib.strings.levenshtein` {#function-library-lib.strings.levenshtein}
 
@@ -1370,7 +1487,8 @@ Algorithm adjusted from https://stackoverflow.com/a/9750974/6605742
 : Function argument
 
 
-### lib.strings.levenshtein usage example {#function-library-example-lib.strings.levenshtein}
+::: {.example #function-library-example-lib.strings.levenshtein}
+# `lib.strings.levenshtein` usage example
 
 ```nix
 levenshtein "foo" "foo"
@@ -1380,6 +1498,7 @@ levenshtein "book" "hook"
 levenshtein "hello" "Heyo"
 => 3
 ```
+:::
 
 ## `lib.strings.commonPrefixLength` {#function-library-lib.strings.commonPrefixLength}
 
@@ -1416,7 +1535,8 @@ Returns the length of the suffix common to both strings.
 Returns whether the levenshtein distance between two strings is at most some value
 Complexity is O(min(n,m)) for k <= 2 and O(n*m) otherwise
 
-### lib.strings.levenshteinAtMost usage example {#function-library-example-lib.strings.levenshteinAtMost}
+::: {.example #function-library-example-lib.strings.levenshteinAtMost}
+# `lib.strings.levenshteinAtMost` usage example
 
 ```nix
 levenshteinAtMost 0 "foo" "foo"
@@ -1430,5 +1550,6 @@ levenshteinAtMost 2 "This is a sentence" "this is a sentense."
 levenshteinAtMost 3 "This is a sentence" "this is a sentense."
 => true
 ```
+:::
 
 

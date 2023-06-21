@@ -132,10 +132,11 @@ impl ManualEntry {
         if let Some(example) = &self.example {
             writeln!(
                 writer,
-                "### {} usage example {{#function-library-example-{}}}\n",
-                title, ident
+                "::: {{.example #function-library-example-{}}}",
+                ident
             )?;
-            writeln!(writer, "```nix{}```\n", example)?;
+            writeln!(writer, "# `{}` usage example\n", title)?;
+            writeln!(writer, "```nix\n{}\n```\n:::\n", example.trim())?;
         }
 
         // TODO: add source links
