@@ -1,0 +1,25 @@
+---
+source: src/main.rs
+expression: output
+---
+## `lib.options.fn` {#function-library-lib.options.fn}
+
+documented function
+
+`a`
+
+: single arugment
+
+
+structured function argument
+
+: `default`
+
+  : documented argument
+
+  `example`
+
+  : i like this argument. another!
+
+
+

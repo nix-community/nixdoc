@@ -311,3 +311,21 @@ fn test_main() {
 
     insta::assert_snapshot!(output);
 }
+
+#[test]
+fn test_arg_formatting() {
+    let mut output = Vec::new();
+    let src = fs::read_to_string("test/arg-formatting.nix").unwrap();
+    let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
+    let category = "options";
+
+    for entry in collect_entries(nix, category) {
+        entry
+            .write_section(&mut output)
+            .expect("Failed to write section")
+    }
+
+    let output = String::from_utf8(output).expect("not utf8");
+
+    insta::assert_snapshot!(output);
+}

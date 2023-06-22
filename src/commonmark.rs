@@ -17,7 +17,6 @@
 //! representing a single entry in the manual.
 
 use failure::Error;
-use std::iter::repeat;
 
 use std::io::Write;
 
@@ -40,43 +39,35 @@ pub enum Argument {
     Pattern(Vec<SingleArg>),
 }
 
-fn print_indented<W: Write>(writer: &mut W, indent: usize, text: &str) -> Result<(), Error> {
-    let prefix = repeat(' ').take(indent).collect::<String>();
-    writeln!(
-        writer,
-        "{}",
-        text.replace("\r\n", "\n")
-            .replace("\n", &format!("\n{prefix}"))
-    )?;
-
-    Ok(())
-}
-
 impl Argument {
     /// Write CommonMark structure for a single function argument.
-    fn write_argument<W: Write>(self, writer: &mut W, indent: usize) -> Result<(), Error> {
+    fn format_argument(self) -> String {
         match self {
             // Write a flat argument entry.
             Argument::Flat(arg) => {
-                let arg_text = format!(
+                format!(
                     "`{}`\n\n: {}\n\n",
                     arg.name,
                     arg.doc.unwrap_or("Function argument".into()).trim()
-                );
-                print_indented(writer, indent, &arg_text)?;
+                )
             }
 
             // Write a pattern argument entry and its individual
             // parameters as a nested structure.
             Argument::Pattern(pattern_args) => {
-                print_indented(writer, indent, "structured function argument\n\n: ")?;
+                let mut inner = String::new();
                 for pattern_arg in pattern_args {
-                    Argument::Flat(pattern_arg).write_argument(writer, indent + 2)?;
+                    inner += &Argument::Flat(pattern_arg).format_argument();
                 }
+
+                let indented = textwrap::indent(&inner, "  ");
+                // drop leading indentation, the `: ` serves this function already
+                format!(
+                    "structured function argument\n\n: {}",
+                    indented.trim_start()
+                )
             }
         }
-
-        Ok(())
     }
 }
 
@@ -130,7 +121,7 @@ impl ManualEntry {
         // Function argument names
         if !self.args.is_empty() {
             for arg in self.args {
-                arg.write_argument(writer, 0)?;
+                writeln!(writer, "{}", arg.format_argument())?;
             }
         }
 
