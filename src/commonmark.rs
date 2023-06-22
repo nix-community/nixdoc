@@ -23,7 +23,7 @@ use std::io::Write;
 
 /// Represent a single function argument name and its (optional)
 /// doc-string.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct SingleArg {
     pub name: String,
     pub doc: Option<String>,
@@ -31,7 +31,7 @@ pub struct SingleArg {
 
 /// Represent a function argument, which is either a flat identifier
 /// or a pattern set.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Argument {
     /// Flat function argument (e.g. `n: n * 2`).
     Flat(SingleArg),
@@ -73,7 +73,7 @@ impl Argument {
 }
 
 /// Represents a single manual section describing a library function.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ManualEntry {
     /// Name of the function category (e.g. 'strings', 'trivial', 'attrsets')
     pub category: String,

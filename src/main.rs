@@ -30,12 +30,13 @@ mod commonmark;
 
 use self::commonmark::*;
 use rnix::{
-    ast::{AstToken, AttrSet, AttrpathValue, Comment, Expr, Lambda, Param},
+    ast::{AstToken, Attr, AttrpathValue, Comment, Expr, Inherit, Lambda, LetIn, Param},
     SyntaxKind, SyntaxNode,
 };
 use rowan::{ast::AstNode, WalkEvent};
 use std::fs;
 
+use std::collections::HashMap;
 use std::io;
 use std::io::Write;
 
@@ -83,6 +84,24 @@ struct DocItem {
     name: String,
     comment: DocComment,
     args: Vec<Argument>,
+}
+
+impl DocItem {
+    fn to_entry(self, category: &str) -> ManualEntry {
+        ManualEntry {
+            category: category.to_string(),
+            name: self.name,
+            description: self
+                .comment
+                .doc
+                .split("\n\n")
+                .map(|s| s.to_string())
+                .collect(),
+            fn_type: self.comment.doc_type,
+            example: self.comment.example,
+            args: self.args,
+        }
+    }
 }
 
 /// Retrieve documentation comments.
@@ -246,26 +265,68 @@ fn collect_entry_information(entry: AttrpathValue) -> Option<DocItem> {
     }
 }
 
+fn collect_bindings(
+    node: &SyntaxNode,
+    category: &str,
+    scope: HashMap<String, ManualEntry>,
+) -> Vec<ManualEntry> {
+    for ev in node.preorder() {
+        match ev {
+            WalkEvent::Enter(n) if n.kind() == SyntaxKind::NODE_ATTR_SET => {
+                let mut entries = vec![];
+                for child in n.children() {
+                    if let Some(apv) = AttrpathValue::cast(child.clone()) {
+                        entries
+                            .extend(collect_entry_information(apv).map(|di| di.to_entry(category)));
+                    } else if let Some(inh) = Inherit::cast(child) {
+                        // `inherit (x) ...` needs much more handling than we can
+                        // reasonably do here
+                        if inh.from().is_some() {
+                            continue;
+                        }
+                        entries.extend(inh.attrs().filter_map(|a| match a {
+                            Attr::Ident(i) => scope.get(&i.syntax().text().to_string()).cloned(),
+                            // ignore non-ident keys. these aren't useful as lib
+                            // functions in general anyway.
+                            _ => None,
+                        }));
+                    }
+                }
+                return entries;
+            }
+            _ => (),
+        }
+    }
+
+    vec![]
+}
+
 fn collect_entries(root: rnix::Root, category: &str) -> Vec<ManualEntry> {
-    root.syntax()
-        .preorder()
-        .filter_map(|ev| match ev {
-            WalkEvent::Enter(n) => Some(n),
-            _ => None,
-        })
-        .filter_map(AttrSet::cast)
-        .flat_map(|n| n.syntax().children())
-        .filter_map(AttrpathValue::cast)
-        .filter_map(collect_entry_information)
-        .map(|d| ManualEntry {
-            category: category.to_string(),
-            name: d.name,
-            description: d.comment.doc.split("\n\n").map(|s| s.to_string()).collect(),
-            fn_type: d.comment.doc_type,
-            example: d.comment.example,
-            args: d.args,
-        })
-        .collect()
+    // we will look into the top-level let and its body for function docs.
+    // we only need a single level of scope for this.
+    // since only the body can export a function we don't need to implement
+    // mutually recursive resolution.
+    for ev in root.syntax().preorder() {
+        match ev {
+            WalkEvent::Enter(n) if n.kind() == SyntaxKind::NODE_LET_IN => {
+                return collect_bindings(
+                    LetIn::cast(n.clone()).unwrap().body().unwrap().syntax(),
+                    category,
+                    n.children()
+                        .filter_map(AttrpathValue::cast)
+                        .filter_map(collect_entry_information)
+                        .map(|di| (di.name.to_string(), di.to_entry(category)))
+                        .collect(),
+                );
+            }
+            WalkEvent::Enter(n) if n.kind() == SyntaxKind::NODE_ATTR_SET => {
+                return collect_bindings(&n, category, Default::default());
+            }
+            _ => (),
+        }
+    }
+
+    vec![]
 }
 
 fn main() {
@@ -330,6 +391,24 @@ fn test_arg_formatting() {
     let src = fs::read_to_string("test/arg-formatting.nix").unwrap();
     let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
     let category = "options";
+
+    for entry in collect_entries(nix, category) {
+        entry
+            .write_section(&Default::default(), &mut output)
+            .expect("Failed to write section")
+    }
+
+    let output = String::from_utf8(output).expect("not utf8");
+
+    insta::assert_snapshot!(output);
+}
+
+#[test]
+fn test_inherited_exports() {
+    let mut output = Vec::new();
+    let src = fs::read_to_string("test/inherited-exports.nix").unwrap();
+    let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
+    let category = "let";
 
     for entry in collect_entries(nix, category) {
         entry

@@ -1,0 +1,24 @@
+---
+source: src/main.rs
+expression: output
+---
+## `lib.let.concatStrings` {#function-library-lib.let.concatStrings}
+
+**Type**: `concatStrings :: [string] -> string`
+
+Concatenate a list of strings.
+
+::: {.example #function-library-example-lib.let.concatStrings}
+# `lib.let.concatStrings` usage example
+
+```nix
+concatStrings ["foo" "bar"]
+=> "foobar"
+```
+:::
+
+## `lib.let.foo2` {#function-library-lib.let.foo2}
+
+this should be found
+
+
