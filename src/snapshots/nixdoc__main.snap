@@ -19,6 +19,8 @@ concatStrings ["foo" "bar"]
 ```
 :::
 
+Located at [lib/strings.nix:49](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L49) in `<nixpkgs>`.
+
 ## `lib.strings.concatMapStrings` {#function-library-lib.strings.concatMapStrings}
 
 **Type**: `concatMapStrings :: (a -> string) -> [a] -> string`
@@ -43,6 +45,8 @@ concatMapStrings (x: "a" + x) ["foo" "bar"]
 => "afooabar"
 ```
 :::
+
+Located at [lib/strings.nix:59](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L59) in `<nixpkgs>`.
 
 ## `lib.strings.concatImapStrings` {#function-library-lib.strings.concatImapStrings}
 
@@ -70,6 +74,8 @@ concatImapStrings (pos: x: "${toString pos}-${x}") ["foo" "bar"]
 ```
 :::
 
+Located at [lib/strings.nix:70](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L70) in `<nixpkgs>`.
+
 ## `lib.strings.intersperse` {#function-library-lib.strings.intersperse}
 
 **Type**: `intersperse :: a -> [a] -> [a]`
@@ -95,6 +101,8 @@ intersperse "/" ["usr" "local" "bin"]
 ```
 :::
 
+Located at [lib/strings.nix:80](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L80) in `<nixpkgs>`.
+
 ## `lib.strings.concatStringsSep` {#function-library-lib.strings.concatStringsSep}
 
 **Type**: `concatStringsSep :: string -> [string] -> string`
@@ -109,6 +117,8 @@ concatStringsSep "/" ["usr" "local" "bin"]
 => "usr/local/bin"
 ```
 :::
+
+Located at [lib/strings.nix:97](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L97) in `<nixpkgs>`.
 
 ## `lib.strings.concatMapStringsSep` {#function-library-lib.strings.concatMapStringsSep}
 
@@ -142,6 +152,8 @@ concatMapStringsSep "-" (x: toUpper x)  ["foo" "bar" "baz"]
 ```
 :::
 
+Located at [lib/strings.nix:110](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L110) in `<nixpkgs>`.
+
 ## `lib.strings.concatImapStringsSep` {#function-library-lib.strings.concatImapStringsSep}
 
 **Type**: `concatIMapStringsSep :: string -> (int -> a -> string) -> [a] -> string`
@@ -173,6 +185,8 @@ concatImapStringsSep "-" (pos: x: toString (x / pos)) [ 6 6 6 ]
 ```
 :::
 
+Located at [lib/strings.nix:127](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L127) in `<nixpkgs>`.
+
 ## `lib.strings.concatLines` {#function-library-lib.strings.concatLines}
 
 **Type**: `concatLines :: [string] -> string`
@@ -188,6 +202,8 @@ concatLines [ "foo" "bar" ]
 => "foo\nbar\n"
 ```
 :::
+
+Located at [lib/strings.nix:144](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L144) in `<nixpkgs>`.
 
 ## `lib.strings.makeSearchPath` {#function-library-lib.strings.makeSearchPath}
 
@@ -216,6 +232,8 @@ makeSearchPath "bin" [""]
 => "/bin"
 ```
 :::
+
+Located at [lib/strings.nix:157](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L157) in `<nixpkgs>`.
 
 ## `lib.strings.makeSearchPathOutput` {#function-library-lib.strings.makeSearchPathOutput}
 
@@ -250,6 +268,8 @@ makeSearchPathOutput "dev" "bin" [ pkgs.openssl pkgs.zlib ]
 ```
 :::
 
+Located at [lib/strings.nix:175](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L175) in `<nixpkgs>`.
+
 ## `lib.strings.makeLibraryPath` {#function-library-lib.strings.makeLibraryPath}
 
 Construct a library search path (such as RPATH) containing the
@@ -267,6 +287,8 @@ makeLibraryPath [ pkgs.openssl pkgs.zlib ]
 ```
 :::
 
+Located at [lib/strings.nix:193](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L193) in `<nixpkgs>`.
+
 ## `lib.strings.makeBinPath` {#function-library-lib.strings.makeBinPath}
 
 Construct a binary search path (such as $PATH) containing the
@@ -280,6 +302,8 @@ makeBinPath ["/root" "/usr" "/usr/local"]
 => "/root/bin:/usr/bin:/usr/local/bin"
 ```
 :::
+
+Located at [lib/strings.nix:202](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L202) in `<nixpkgs>`.
 
 ## `lib.strings.normalizePath` {#function-library-lib.strings.normalizePath}
 
@@ -300,6 +324,8 @@ normalizePath "/a//b///c/"
 => "/a/b/c/"
 ```
 :::
+
+Located at [lib/strings.nix:212](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L212) in `<nixpkgs>`.
 
 ## `lib.strings.optionalString` {#function-library-lib.strings.optionalString}
 
@@ -329,6 +355,8 @@ optionalString false "some-string"
 ```
 :::
 
+Located at [lib/strings.nix:238](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L238) in `<nixpkgs>`.
+
 ## `lib.strings.hasPrefix` {#function-library-lib.strings.hasPrefix}
 
 **Type**: `hasPrefix :: string -> string -> bool`
@@ -356,6 +384,8 @@ hasPrefix "foo" "barfoo"
 ```
 :::
 
+Located at [lib/strings.nix:254](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L254) in `<nixpkgs>`.
+
 ## `lib.strings.hasSuffix` {#function-library-lib.strings.hasSuffix}
 
 **Type**: `hasSuffix :: string -> string -> bool`
@@ -382,6 +412,8 @@ hasSuffix "foo" "barfoo"
 => true
 ```
 :::
+
+Located at [lib/strings.nix:280](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L280) in `<nixpkgs>`.
 
 ## `lib.strings.hasInfix` {#function-library-lib.strings.hasInfix}
 
@@ -414,6 +446,8 @@ hasInfix "foo" "abcd"
 ```
 :::
 
+Located at [lib/strings.nix:317](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L317) in `<nixpkgs>`.
+
 ## `lib.strings.stringToCharacters` {#function-library-lib.strings.stringToCharacters}
 
 **Type**: `stringToCharacters :: string -> [string]`
@@ -444,6 +478,8 @@ stringToCharacters "🦄"
 ```
 :::
 
+Located at [lib/strings.nix:347](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L347) in `<nixpkgs>`.
+
 ## `lib.strings.stringAsChars` {#function-library-lib.strings.stringAsChars}
 
 **Type**: `stringAsChars :: (string -> string) -> string -> string`
@@ -470,6 +506,8 @@ stringAsChars (x: if x == "a" then "i" else x) "nax"
 ```
 :::
 
+Located at [lib/strings.nix:359](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L359) in `<nixpkgs>`.
+
 ## `lib.strings.charToInt` {#function-library-lib.strings.charToInt}
 
 **Type**: `charToInt :: string -> int`
@@ -492,6 +530,8 @@ charToInt "("
 ```
 :::
 
+Located at [lib/strings.nix:378](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L378) in `<nixpkgs>`.
+
 ## `lib.strings.escape` {#function-library-lib.strings.escape}
 
 **Type**: `escape :: [string] -> string -> string`
@@ -512,6 +552,8 @@ escape ["(" ")"] "(foo)"
 => "\\(foo\\)"
 ```
 :::
+
+Located at [lib/strings.nix:389](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L389) in `<nixpkgs>`.
 
 ## `lib.strings.escapeC` {#function-library-lib.strings.escapeC}
 
@@ -535,6 +577,8 @@ escapeC [" "] "foo bar"
 ```
 :::
 
+Located at [lib/strings.nix:402](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L402) in `<nixpkgs>`.
+
 ## `lib.strings.escapeURL` {#function-library-lib.strings.escapeURL}
 
 **Type**: `escapeURL :: string -> string`
@@ -550,6 +594,8 @@ escapeURL "foo/bar baz"
 => "foo%2Fbar%20baz"
 ```
 :::
+
+Located at [lib/strings.nix:413](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L413) in `<nixpkgs>`.
 
 ## `lib.strings.escapeShellArg` {#function-library-lib.strings.escapeShellArg}
 
@@ -571,6 +617,8 @@ escapeShellArg "esc'ape\nme"
 ```
 :::
 
+Located at [lib/strings.nix:427](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L427) in `<nixpkgs>`.
+
 ## `lib.strings.escapeShellArgs` {#function-library-lib.strings.escapeShellArgs}
 
 **Type**: `escapeShellArgs :: [string] -> string`
@@ -585,6 +633,8 @@ escapeShellArgs ["one" "two three" "four'five"]
 => "'one' 'two three' 'four'\\''five'"
 ```
 :::
+
+Located at [lib/strings.nix:437](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L437) in `<nixpkgs>`.
 
 ## `lib.strings.isValidPosixName` {#function-library-lib.strings.isValidPosixName}
 
@@ -607,6 +657,8 @@ isValidPosixName "0-bad.jpg"
 => false
 ```
 :::
+
+Located at [lib/strings.nix:449](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L449) in `<nixpkgs>`.
 
 ## `lib.strings.toShellVar` {#function-library-lib.strings.toShellVar}
 
@@ -643,6 +695,8 @@ ${toShellVar "foo" "some string"}
 ```
 :::
 
+Located at [lib/strings.nix:469](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L469) in `<nixpkgs>`.
+
 ## `lib.strings.toShellVars` {#function-library-lib.strings.toShellVars}
 
 **Type**: `attrsOf (string | listOf string | attrsOf string) -> string`
@@ -669,6 +723,8 @@ ${toShellVars { inherit foo bar; }}
 ```
 :::
 
+Located at [lib/strings.nix:497](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L497) in `<nixpkgs>`.
+
 ## `lib.strings.escapeNixString` {#function-library-lib.strings.escapeNixString}
 
 **Type**: `string -> string`
@@ -689,6 +745,8 @@ escapeNixString "hello\${}\n"
 ```
 :::
 
+Located at [lib/strings.nix:507](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L507) in `<nixpkgs>`.
+
 ## `lib.strings.escapeRegex` {#function-library-lib.strings.escapeRegex}
 
 **Type**: `string -> string`
@@ -703,6 +761,8 @@ escapeRegex "[^a-z]*"
 => "\\[\\^a-z]\\*"
 ```
 :::
+
+Located at [lib/strings.nix:517](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L517) in `<nixpkgs>`.
 
 ## `lib.strings.escapeNixIdentifier` {#function-library-lib.strings.escapeNixIdentifier}
 
@@ -726,6 +786,8 @@ escapeNixIdentifier "0abc"
 ```
 :::
 
+Located at [lib/strings.nix:529](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L529) in `<nixpkgs>`.
+
 ## `lib.strings.escapeXML` {#function-library-lib.strings.escapeXML}
 
 **Type**: `string -> string`
@@ -742,13 +804,19 @@ escapeXML ''"test" 'test' < & >''
 ```
 :::
 
+Located at [lib/strings.nix:543](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L543) in `<nixpkgs>`.
+
 ## `lib.strings.replaceChars` {#function-library-lib.strings.replaceChars}
 
 warning added 12-12-2022
 
+Located at [lib/strings.nix:548](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L548) in `<nixpkgs>`.
+
 ## `lib.strings.lowerChars` {#function-library-lib.strings.lowerChars}
 
 Case conversion utilities.
+
+Located at [lib/strings.nix:551](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L551) in `<nixpkgs>`.
 
 ## `lib.strings.toLower` {#function-library-lib.strings.toLower}
 
@@ -765,6 +833,8 @@ toLower "HOME"
 ```
 :::
 
+Located at [lib/strings.nix:562](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L562) in `<nixpkgs>`.
+
 ## `lib.strings.toUpper` {#function-library-lib.strings.toUpper}
 
 **Type**: `toUpper :: string -> string`
@@ -779,6 +849,8 @@ toUpper "home"
 => "HOME"
 ```
 :::
+
+Located at [lib/strings.nix:572](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L572) in `<nixpkgs>`.
 
 ## `lib.strings.addContextFrom` {#function-library-lib.strings.addContextFrom}
 
@@ -810,6 +882,8 @@ addContextFrom pkgs.coreutils "bar"
 ```
 :::
 
+Located at [lib/strings.nix:587](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L587) in `<nixpkgs>`.
+
 ## `lib.strings.splitString` {#function-library-lib.strings.splitString}
 
 Cut a string with a separator and produces a list of strings which
@@ -835,6 +909,8 @@ splitString "/" "/usr/local/bin"
 => [ "" "usr" "local" "bin" ]
 ```
 :::
+
+Located at [lib/strings.nix:598](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L598) in `<nixpkgs>`.
 
 ## `lib.strings.removePrefix` {#function-library-lib.strings.removePrefix}
 
@@ -863,6 +939,8 @@ removePrefix "xxx" "foo.bar.baz"
 ```
 :::
 
+Located at [lib/strings.nix:614](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L614) in `<nixpkgs>`.
+
 ## `lib.strings.removeSuffix` {#function-library-lib.strings.removeSuffix}
 
 **Type**: `string -> string -> string`
@@ -890,6 +968,8 @@ removeSuffix "xxx" "homefront"
 ```
 :::
 
+Located at [lib/strings.nix:647](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L647) in `<nixpkgs>`.
+
 ## `lib.strings.versionOlder` {#function-library-lib.strings.versionOlder}
 
 Return true if string v1 denotes a version older than v2.
@@ -914,6 +994,8 @@ versionOlder "1.1" "1.1"
 => false
 ```
 :::
+
+Located at [lib/strings.nix:678](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L678) in `<nixpkgs>`.
 
 ## `lib.strings.versionAtLeast` {#function-library-lib.strings.versionAtLeast}
 
@@ -942,6 +1024,8 @@ versionAtLeast "1.1" "1.2"
 ```
 :::
 
+Located at [lib/strings.nix:690](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L690) in `<nixpkgs>`.
+
 ## `lib.strings.getName` {#function-library-lib.strings.getName}
 
 This function takes an argument that's either a derivation or a
@@ -964,6 +1048,8 @@ getName pkgs.youtube-dl
 ```
 :::
 
+Located at [lib/strings.nix:702](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L702) in `<nixpkgs>`.
+
 ## `lib.strings.getVersion` {#function-library-lib.strings.getVersion}
 
 This function takes an argument that's either a derivation or a
@@ -985,6 +1071,8 @@ getVersion pkgs.youtube-dl
 => "2016.01.01"
 ```
 :::
+
+Located at [lib/strings.nix:719](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L719) in `<nixpkgs>`.
 
 ## `lib.strings.nameFromURL` {#function-library-lib.strings.nameFromURL}
 
@@ -1012,6 +1100,8 @@ nameFromURL "https://nixos.org/releases/nix/nix-1.7/nix-1.7-x86_64-linux.tar.bz2
 ```
 :::
 
+Located at [lib/strings.nix:735](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L735) in `<nixpkgs>`.
+
 ## `lib.strings.mesonOption` {#function-library-lib.strings.mesonOption}
 
 **Type**: `mesonOption :: string -> string -> string@param feature The feature to be set@param value The desired value`
@@ -1037,6 +1127,8 @@ mesonOption "engine" "opengl"
 => "-Dengine=opengl"
 ```
 :::
+
+Located at [lib/strings.nix:754](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L754) in `<nixpkgs>`.
 
 ## `lib.strings.mesonBool` {#function-library-lib.strings.mesonBool}
 
@@ -1066,6 +1158,8 @@ mesonBool "static" false
 ```
 :::
 
+Located at [lib/strings.nix:773](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L773) in `<nixpkgs>`.
+
 ## `lib.strings.mesonEnable` {#function-library-lib.strings.mesonEnable}
 
 **Type**: `mesonEnable :: string -> bool -> string@param feature The feature to be enabled or disabled@param flag The controlling flag`
@@ -1094,6 +1188,8 @@ mesonEnable "savage" false
 ```
 :::
 
+Located at [lib/strings.nix:792](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L792) in `<nixpkgs>`.
+
 ## `lib.strings.enableFeature` {#function-library-lib.strings.enableFeature}
 
 Create an --{enable,disable}-<feat> string that can be passed to
@@ -1119,6 +1215,8 @@ enableFeature false "shared"
 => "--disable-shared"
 ```
 :::
+
+Located at [lib/strings.nix:806](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L806) in `<nixpkgs>`.
 
 ## `lib.strings.enableFeatureAs` {#function-library-lib.strings.enableFeatureAs}
 
@@ -1151,6 +1249,8 @@ enableFeatureAs false "shared" (throw "ignored")
 ```
 :::
 
+Located at [lib/strings.nix:819](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L819) in `<nixpkgs>`.
+
 ## `lib.strings.withFeature` {#function-library-lib.strings.withFeature}
 
 Create an --{with,without}-<feat> string that can be passed to
@@ -1176,6 +1276,8 @@ withFeature false "shared"
 => "--without-shared"
 ```
 :::
+
+Located at [lib/strings.nix:830](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L830) in `<nixpkgs>`.
 
 ## `lib.strings.withFeatureAs` {#function-library-lib.strings.withFeatureAs}
 
@@ -1207,6 +1309,8 @@ withFeatureAs false "shared" (throw "ignored")
 => "--without-shared"
 ```
 :::
+
+Located at [lib/strings.nix:843](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L843) in `<nixpkgs>`.
 
 ## `lib.strings.fixedWidthString` {#function-library-lib.strings.fixedWidthString}
 
@@ -1242,6 +1346,8 @@ fixedWidthString 5 "0" (toString 15)
 ```
 :::
 
+Located at [lib/strings.nix:857](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L857) in `<nixpkgs>`.
+
 ## `lib.strings.fixedWidthNumber` {#function-library-lib.strings.fixedWidthNumber}
 
 Format a number adding leading zeroes up to fixed width.
@@ -1265,6 +1371,8 @@ fixedWidthNumber 5 15
 ```
 :::
 
+Located at [lib/strings.nix:874](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L874) in `<nixpkgs>`.
+
 ## `lib.strings.floatToString` {#function-library-lib.strings.floatToString}
 
 Convert a float to a string, but emit a warning when precision is lost
@@ -1287,10 +1395,14 @@ floatToString 0.0000001
 ```
 :::
 
+Located at [lib/strings.nix:886](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L886) in `<nixpkgs>`.
+
 ## `lib.strings.isCoercibleToString` {#function-library-lib.strings.isCoercibleToString}
 
 Soft-deprecated function. While the original implementation is available as
 isConvertibleWithToString, consider using isStringLike instead, if suitable.
+
+Located at [lib/strings.nix:894](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L894) in `<nixpkgs>`.
 
 ## `lib.strings.isConvertibleWithToString` {#function-library-lib.strings.isConvertibleWithToString}
 
@@ -1304,6 +1416,8 @@ null, bool, list of similarly coercible values.
 : Function argument
 
 
+Located at [lib/strings.nix:903](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L903) in `<nixpkgs>`.
+
 ## `lib.strings.isStringLike` {#function-library-lib.strings.isStringLike}
 
 Check whether a value can be coerced to a string.
@@ -1316,6 +1430,8 @@ string interpolations and in most functions that expect a string.
 
 : Function argument
 
+
+Located at [lib/strings.nix:914](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L914) in `<nixpkgs>`.
 
 ## `lib.strings.isStorePath` {#function-library-lib.strings.isStorePath}
 
@@ -1340,6 +1456,8 @@ isStorePath [] || isStorePath 42 || isStorePath {} || …
 => false
 ```
 :::
+
+Located at [lib/strings.nix:932](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L932) in `<nixpkgs>`.
 
 ## `lib.strings.toInt` {#function-library-lib.strings.toInt}
 
@@ -1374,6 +1492,8 @@ toInt "3.14"
 ```
 :::
 
+Located at [lib/strings.nix:962](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L962) in `<nixpkgs>`.
+
 ## `lib.strings.toIntBase10` {#function-library-lib.strings.toIntBase10}
 
 **Type**: `string -> int`
@@ -1406,6 +1526,8 @@ toIntBase10 "3.14"
 ```
 :::
 
+Located at [lib/strings.nix:1013](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L1013) in `<nixpkgs>`.
+
 ## `lib.strings.readPathsFromFile` {#function-library-lib.strings.readPathsFromFile}
 
 Read a list of paths from `file`, relative to the `rootPath`.
@@ -1427,6 +1549,8 @@ readPathsFromFile /prefix
 "/prefix/compose-search-path.patch" ]
 ```
 :::
+
+Located at [lib/strings.nix:1056](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L1056) in `<nixpkgs>`.
 
 ## `lib.strings.fileContents` {#function-library-lib.strings.fileContents}
 
@@ -1450,6 +1574,8 @@ fileContents ./version
 ```
 :::
 
+Located at [lib/strings.nix:1076](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L1076) in `<nixpkgs>`.
+
 ## `lib.strings.sanitizeDerivationName` {#function-library-lib.strings.sanitizeDerivationName}
 
 **Type**: `sanitizeDerivationName :: String -> String`
@@ -1468,6 +1594,8 @@ sanitizeDerivationName pkgs.hello
 => "-nix-store-2g75chlbpxlrqn15zlby2dfh8hr9qwbk-hello-2.10"
 ```
 :::
+
+Located at [lib/strings.nix:1091](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L1091) in `<nixpkgs>`.
 
 ## `lib.strings.levenshtein` {#function-library-lib.strings.levenshtein}
 
@@ -1500,6 +1628,8 @@ levenshtein "hello" "Heyo"
 ```
 :::
 
+Located at [lib/strings.nix:1130](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L1130) in `<nixpkgs>`.
+
 ## `lib.strings.commonPrefixLength` {#function-library-lib.strings.commonPrefixLength}
 
 Returns the length of the prefix common to both strings.
@@ -1514,6 +1644,8 @@ Returns the length of the prefix common to both strings.
 : Function argument
 
 
+Located at [lib/strings.nix:1151](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L1151) in `<nixpkgs>`.
+
 ## `lib.strings.commonSuffixLength` {#function-library-lib.strings.commonSuffixLength}
 
 Returns the length of the suffix common to both strings.
@@ -1527,6 +1659,8 @@ Returns the length of the suffix common to both strings.
 
 : Function argument
 
+
+Located at [lib/strings.nix:1159](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L1159) in `<nixpkgs>`.
 
 ## `lib.strings.levenshteinAtMost` {#function-library-lib.strings.levenshteinAtMost}
 
@@ -1551,5 +1685,7 @@ levenshteinAtMost 3 "This is a sentence" "this is a sentense."
 => true
 ```
 :::
+
+Located at [lib/strings.nix:1183](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L1183) in `<nixpkgs>`.
 
 

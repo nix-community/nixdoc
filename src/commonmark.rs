@@ -17,6 +17,7 @@
 //! representing a single entry in the manual.
 
 use failure::Error;
+use std::collections::HashMap;
 
 use std::io::Write;
 
@@ -97,7 +98,11 @@ pub struct ManualEntry {
 
 impl ManualEntry {
     /// Write a single CommonMark entry for a documented Nix function.
-    pub fn write_section<W: Write>(self, writer: &mut W) -> Result<(), Error> {
+    pub fn write_section<W: Write>(
+        self,
+        locs: &HashMap<String, String>,
+        writer: &mut W,
+    ) -> Result<(), Error> {
         let title = format!("lib.{}.{}", self.category, self.name);
         let ident = format!(
             "lib.{}.{}",
@@ -139,8 +144,9 @@ impl ManualEntry {
             writeln!(writer, "```nix\n{}\n```\n:::\n", example.trim())?;
         }
 
-        // TODO: add source links
-        //println!("[Source](#function-location-{})", ident);
+        if let Some(loc) = locs.get(&ident) {
+            writeln!(writer, "Located at {loc}.\n")?;
+        }
 
         Ok(())
     }

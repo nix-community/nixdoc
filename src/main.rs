@@ -53,6 +53,10 @@ struct Options {
     #[structopt(short = "f", long = "file", parse(from_os_str))]
     file: PathBuf,
 
+    /// Path to a file containing location data as JSON.
+    #[structopt(short = "l", long = "locs", parse(from_os_str))]
+    locs: Option<PathBuf>,
+
     /// Name of the function category (e.g. 'strings', 'attrsets').
     #[structopt(short = "c", long = "category")]
     category: String,
@@ -268,6 +272,13 @@ fn main() {
     let mut output = io::stdout();
     let opts = Options::from_args();
     let src = fs::read_to_string(&opts.file).unwrap();
+    let locs = match opts.locs {
+        None => Default::default(),
+        Some(p) => fs::read_to_string(p)
+            .map_err(|e| e.to_string())
+            .and_then(|json| serde_json::from_str(&json).map_err(|e| e.to_string()))
+            .expect("could not read location information"),
+    };
     let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
 
     // TODO: move this to commonmark.rs
@@ -280,7 +291,7 @@ fn main() {
 
     for entry in collect_entries(nix, &opts.category) {
         entry
-            .write_section(&mut output)
+            .write_section(&locs, &mut output)
             .expect("Failed to write section")
     }
 }
@@ -289,6 +300,7 @@ fn main() {
 fn test_main() {
     let mut output = Vec::new();
     let src = fs::read_to_string("test/strings.nix").unwrap();
+    let locs = serde_json::from_str(&fs::read_to_string("test/strings.json").unwrap()).unwrap();
     let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
     let desc = "string manipulation functions";
     let category = "strings";
@@ -303,7 +315,7 @@ fn test_main() {
 
     for entry in collect_entries(nix, category) {
         entry
-            .write_section(&mut output)
+            .write_section(&locs, &mut output)
             .expect("Failed to write section")
     }
 
@@ -321,7 +333,7 @@ fn test_arg_formatting() {
 
     for entry in collect_entries(nix, category) {
         entry
-            .write_section(&mut output)
+            .write_section(&Default::default(), &mut output)
             .expect("Failed to write section")
     }
 
