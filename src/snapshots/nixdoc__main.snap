@@ -6,7 +6,7 @@ expression: output
 
 ## `lib.strings.concatStrings` {#function-library-lib.strings.concatStrings}
 
-`concatStrings :: [string] -> string`
+**Type**: `concatStrings :: [string] -> string`
 
 Concatenate a list of strings.
 
@@ -19,7 +19,7 @@ concatStrings ["foo" "bar"]
 
 ## `lib.strings.concatMapStrings` {#function-library-lib.strings.concatMapStrings}
 
-`concatMapStrings :: (a -> string) -> [a] -> string`
+**Type**: `concatMapStrings :: (a -> string) -> [a] -> string`
 
 Map a function over a list and concatenate the resulting strings.
 
@@ -42,7 +42,7 @@ concatMapStrings (x: "a" + x) ["foo" "bar"]
 
 ## `lib.strings.concatImapStrings` {#function-library-lib.strings.concatImapStrings}
 
-`concatImapStrings :: (int -> a -> string) -> [a] -> string`
+**Type**: `concatImapStrings :: (int -> a -> string) -> [a] -> string`
 
 Like `concatMapStrings` except that the f functions also gets the
 position as a parameter.
@@ -66,7 +66,7 @@ concatImapStrings (pos: x: "${toString pos}-${x}") ["foo" "bar"]
 
 ## `lib.strings.intersperse` {#function-library-lib.strings.intersperse}
 
-`intersperse :: a -> [a] -> [a]`
+**Type**: `intersperse :: a -> [a] -> [a]`
 
 Place an element between each element of a list
 
@@ -89,7 +89,7 @@ intersperse "/" ["usr" "local" "bin"]
 
 ## `lib.strings.concatStringsSep` {#function-library-lib.strings.concatStringsSep}
 
-`concatStringsSep :: string -> [string] -> string`
+**Type**: `concatStringsSep :: string -> [string] -> string`
 
 Concatenate a list of strings with a separator between each element
 
@@ -102,7 +102,7 @@ concatStringsSep "/" ["usr" "local" "bin"]
 
 ## `lib.strings.concatMapStringsSep` {#function-library-lib.strings.concatMapStringsSep}
 
-`concatMapStringsSep :: string -> (a -> string) -> [a] -> string`
+**Type**: `concatMapStringsSep :: string -> (a -> string) -> [a] -> string`
 
 Maps a function over a list of strings and then concatenates the
 result with the specified separator interspersed between
@@ -132,7 +132,7 @@ concatMapStringsSep "-" (x: toUpper x)  ["foo" "bar" "baz"]
 
 ## `lib.strings.concatImapStringsSep` {#function-library-lib.strings.concatImapStringsSep}
 
-`concatIMapStringsSep :: string -> (int -> a -> string) -> [a] -> string`
+**Type**: `concatIMapStringsSep :: string -> (int -> a -> string) -> [a] -> string`
 
 Same as `concatMapStringsSep`, but the mapping function
 additionally receives the position of its argument.
@@ -161,7 +161,7 @@ concatImapStringsSep "-" (pos: x: toString (x / pos)) [ 6 6 6 ]
 
 ## `lib.strings.concatLines` {#function-library-lib.strings.concatLines}
 
-`concatLines :: [string] -> string`
+**Type**: `concatLines :: [string] -> string`
 
 Concatenate a list of strings, adding a newline at the end of each one.
 Defined as `concatMapStrings (s: s + "\n")`.
@@ -175,7 +175,7 @@ concatLines [ "foo" "bar" ]
 
 ## `lib.strings.makeSearchPath` {#function-library-lib.strings.makeSearchPath}
 
-`makeSearchPath :: string -> [string] -> string`
+**Type**: `makeSearchPath :: string -> [string] -> string`
 
 Construct a Unix-style, colon-separated search path consisting of
 the given `subDir` appended to each of the given paths.
@@ -201,7 +201,7 @@ makeSearchPath "bin" [""]
 
 ## `lib.strings.makeSearchPathOutput` {#function-library-lib.strings.makeSearchPathOutput}
 
-`string -> string -> [package] -> string`
+**Type**: `string -> string -> [package] -> string`
 
 Construct a Unix-style search path by appending the given
 `subDir` to the specified `output` of each of the packages. If no
@@ -259,7 +259,7 @@ makeBinPath ["/root" "/usr" "/usr/local"]
 
 ## `lib.strings.normalizePath` {#function-library-lib.strings.normalizePath}
 
-`normalizePath :: string -> string`
+**Type**: `normalizePath :: string -> string`
 
 Normalize path, removing extraneous /s
 
@@ -277,7 +277,7 @@ normalizePath "/a//b///c/"
 
 ## `lib.strings.optionalString` {#function-library-lib.strings.optionalString}
 
-`optionalString :: bool -> string -> string`
+**Type**: `optionalString :: bool -> string -> string`
 
 Depending on the boolean `cond', return either the given string
 or the empty string. Useful to concatenate against a bigger string.
@@ -303,7 +303,7 @@ optionalString false "some-string"
 
 ## `lib.strings.hasPrefix` {#function-library-lib.strings.hasPrefix}
 
-`hasPrefix :: string -> string -> bool`
+**Type**: `hasPrefix :: string -> string -> bool`
 
 Determine whether a string has given prefix.
 
@@ -328,7 +328,7 @@ hasPrefix "foo" "barfoo"
 
 ## `lib.strings.hasSuffix` {#function-library-lib.strings.hasSuffix}
 
-`hasSuffix :: string -> string -> bool`
+**Type**: `hasSuffix :: string -> string -> bool`
 
 Determine whether a string has given suffix.
 
@@ -353,7 +353,7 @@ hasSuffix "foo" "barfoo"
 
 ## `lib.strings.hasInfix` {#function-library-lib.strings.hasInfix}
 
-`hasInfix :: string -> string -> bool`
+**Type**: `hasInfix :: string -> string -> bool`
 
 Determine whether a string contains the given infix
 
@@ -382,7 +382,7 @@ hasInfix "foo" "abcd"
 
 ## `lib.strings.stringToCharacters` {#function-library-lib.strings.stringToCharacters}
 
-`stringToCharacters :: string -> [string]`
+**Type**: `stringToCharacters :: string -> [string]`
 
 Convert a string to a list of characters (i.e. singleton strings).
 This allows you to, e.g., map a function over each character.  However,
@@ -410,7 +410,7 @@ stringToCharacters "🦄"
 
 ## `lib.strings.stringAsChars` {#function-library-lib.strings.stringAsChars}
 
-`stringAsChars :: (string -> string) -> string -> string`
+**Type**: `stringAsChars :: (string -> string) -> string -> string`
 
 Manipulate a string character by character and replace them by
 strings before concatenating the results.
@@ -434,7 +434,7 @@ stringAsChars (x: if x == "a" then "i" else x) "nax"
 
 ## `lib.strings.charToInt` {#function-library-lib.strings.charToInt}
 
-`charToInt :: string -> int`
+**Type**: `charToInt :: string -> int`
 
 Convert char to ascii value, must be in printable range
 
@@ -454,7 +454,7 @@ charToInt "("
 
 ## `lib.strings.escape` {#function-library-lib.strings.escape}
 
-`escape :: [string] -> string -> string`
+**Type**: `escape :: [string] -> string -> string`
 
 Escape occurrence of the elements of `list` in `string` by
 prefixing it with a backslash.
@@ -473,7 +473,7 @@ escape ["(" ")"] "(foo)"
 
 ## `lib.strings.escapeC` {#function-library-lib.strings.escapeC}
 
-`escapeC = [string] -> string -> string`
+**Type**: `escapeC = [string] -> string -> string`
 
 Escape occurrence of the element of `list` in `string` by
 converting to its ASCII value and prefixing it with \\x.
@@ -493,7 +493,7 @@ escapeC [" "] "foo bar"
 
 ## `lib.strings.escapeURL` {#function-library-lib.strings.escapeURL}
 
-`escapeURL :: string -> string`
+**Type**: `escapeURL :: string -> string`
 
 Escape the string so it can be safely placed inside a URL
 query.
@@ -507,7 +507,7 @@ escapeURL "foo/bar baz"
 
 ## `lib.strings.escapeShellArg` {#function-library-lib.strings.escapeShellArg}
 
-`escapeShellArg :: string -> string`
+**Type**: `escapeShellArg :: string -> string`
 
 Quote string to be used safely within the Bourne shell.
 
@@ -525,7 +525,7 @@ escapeShellArg "esc'ape\nme"
 
 ## `lib.strings.escapeShellArgs` {#function-library-lib.strings.escapeShellArgs}
 
-`escapeShellArgs :: [string] -> string`
+**Type**: `escapeShellArgs :: [string] -> string`
 
 Quote all arguments to be safely passed to the Bourne shell.
 
@@ -538,7 +538,7 @@ escapeShellArgs ["one" "two three" "four'five"]
 
 ## `lib.strings.isValidPosixName` {#function-library-lib.strings.isValidPosixName}
 
-`string -> bool`
+**Type**: `string -> bool`
 
 Test whether the given name is a valid POSIX shell variable name.
 
@@ -558,7 +558,7 @@ isValidPosixName "0-bad.jpg"
 
 ## `lib.strings.toShellVar` {#function-library-lib.strings.toShellVar}
 
-`string -> (string | listOf string | attrsOf string) -> string`
+**Type**: `string -> (string | listOf string | attrsOf string) -> string`
 
 Translate a Nix value into a shell variable declaration, with proper escaping.
 
@@ -591,7 +591,7 @@ ${toShellVar "foo" "some string"}
 
 ## `lib.strings.toShellVars` {#function-library-lib.strings.toShellVars}
 
-`attrsOf (string | listOf string | attrsOf string) -> string`
+**Type**: `attrsOf (string | listOf string | attrsOf string) -> string`
 
 Translate an attribute set into corresponding shell variable declarations
 using `toShellVar`.
@@ -615,7 +615,7 @@ ${toShellVars { inherit foo bar; }}
 
 ## `lib.strings.escapeNixString` {#function-library-lib.strings.escapeNixString}
 
-`string -> string`
+**Type**: `string -> string`
 
 Turn a string into a Nix expression representing that string
 
@@ -633,7 +633,7 @@ escapeNixString "hello\${}\n"
 
 ## `lib.strings.escapeRegex` {#function-library-lib.strings.escapeRegex}
 
-`string -> string`
+**Type**: `string -> string`
 
 Turn a string into an exact regular expression
 
@@ -646,7 +646,7 @@ escapeRegex "[^a-z]*"
 
 ## `lib.strings.escapeNixIdentifier` {#function-library-lib.strings.escapeNixIdentifier}
 
-`string -> string`
+**Type**: `string -> string`
 
 Quotes a string if it can't be used as an identifier directly.
 
@@ -666,7 +666,7 @@ escapeNixIdentifier "0abc"
 
 ## `lib.strings.escapeXML` {#function-library-lib.strings.escapeXML}
 
-`string -> string`
+**Type**: `string -> string`
 
 Escapes a string such that it is safe to include verbatim in an XML
 document.
@@ -688,7 +688,7 @@ Case conversion utilities.
 
 ## `lib.strings.toLower` {#function-library-lib.strings.toLower}
 
-`toLower :: string -> string`
+**Type**: `toLower :: string -> string`
 
 Converts an ASCII string to lower-case.
 
@@ -701,7 +701,7 @@ toLower "HOME"
 
 ## `lib.strings.toUpper` {#function-library-lib.strings.toUpper}
 
-`toUpper :: string -> string`
+**Type**: `toUpper :: string -> string`
 
 Converts an ASCII string to upper-case.
 
@@ -766,7 +766,7 @@ splitString "/" "/usr/local/bin"
 
 ## `lib.strings.removePrefix` {#function-library-lib.strings.removePrefix}
 
-`string -> string -> string`
+**Type**: `string -> string -> string`
 
 Return a string without the specified prefix, if the prefix matches.
 
@@ -791,7 +791,7 @@ removePrefix "xxx" "foo.bar.baz"
 
 ## `lib.strings.removeSuffix` {#function-library-lib.strings.removeSuffix}
 
-`string -> string -> string`
+**Type**: `string -> string -> string`
 
 Return a string without the specified suffix, if the suffix matches.
 
@@ -928,7 +928,7 @@ nameFromURL "https://nixos.org/releases/nix/nix-1.7/nix-1.7-x86_64-linux.tar.bz2
 
 ## `lib.strings.mesonOption` {#function-library-lib.strings.mesonOption}
 
-`mesonOption :: string -> string -> string@param feature The feature to be set@param value The desired value`
+**Type**: `mesonOption :: string -> string -> string@param feature The feature to be set@param value The desired value`
 
 Create a -D<feature>=<value> string that can be passed to typical Meson
 invocations.
@@ -952,7 +952,7 @@ mesonOption "engine" "opengl"
 
 ## `lib.strings.mesonBool` {#function-library-lib.strings.mesonBool}
 
-`mesonBool :: string -> bool -> string@param condition The condition to be made true or false@param flag The controlling flag of the condition`
+**Type**: `mesonBool :: string -> bool -> string@param condition The condition to be made true or false@param flag The controlling flag of the condition`
 
 Create a -D<condition>={true,false} string that can be passed to typical
 Meson invocations.
@@ -978,7 +978,7 @@ mesonBool "static" false
 
 ## `lib.strings.mesonEnable` {#function-library-lib.strings.mesonEnable}
 
-`mesonEnable :: string -> bool -> string@param feature The feature to be enabled or disabled@param flag The controlling flag`
+**Type**: `mesonEnable :: string -> bool -> string@param feature The feature to be enabled or disabled@param flag The controlling flag`
 
 Create a -D<feature>={enabled,disabled} string that can be passed to
 typical Meson invocations.
@@ -1110,7 +1110,7 @@ withFeatureAs false "shared" (throw "ignored")
 
 ## `lib.strings.fixedWidthString` {#function-library-lib.strings.fixedWidthString}
 
-`fixedWidthString :: int -> string -> string -> string`
+**Type**: `fixedWidthString :: int -> string -> string -> string`
 
 Create a fixed width string with additional prefix to match
 required width.
@@ -1235,7 +1235,7 @@ isStorePath [] || isStorePath 42 || isStorePath {} || …
 
 ## `lib.strings.toInt` {#function-library-lib.strings.toInt}
 
-`string -> int`
+**Type**: `string -> int`
 
 Parse a string as an int. Does not support parsing of integers with preceding zero due to
 ambiguity between zero-padded and octal numbers. See toIntBase10.
@@ -1267,7 +1267,7 @@ toInt "3.14"
 
 ## `lib.strings.toIntBase10` {#function-library-lib.strings.toIntBase10}
 
-`string -> int`
+**Type**: `string -> int`
 
 Parse a string as a base 10 int. This supports parsing of zero-padded integers.
 
@@ -1317,7 +1317,7 @@ readPathsFromFile /prefix
 
 ## `lib.strings.fileContents` {#function-library-lib.strings.fileContents}
 
-`fileContents :: path -> string`
+**Type**: `fileContents :: path -> string`
 
 Read the contents of a file removing the trailing \n
 
@@ -1337,7 +1337,7 @@ fileContents ./version
 
 ## `lib.strings.sanitizeDerivationName` {#function-library-lib.strings.sanitizeDerivationName}
 
-`sanitizeDerivationName :: String -> String`
+**Type**: `sanitizeDerivationName :: String -> String`
 
 Creates a valid derivation name from a potentially invalid one.
 
@@ -1354,7 +1354,7 @@ sanitizeDerivationName pkgs.hello
 
 ## `lib.strings.levenshtein` {#function-library-lib.strings.levenshtein}
 
-`levenshtein :: string -> string -> int`
+**Type**: `levenshtein :: string -> string -> int`
 
 Computes the Levenshtein distance between two strings.
 Complexity O(n*m) where n and m are the lengths of the strings.
@@ -1411,7 +1411,7 @@ Returns the length of the suffix common to both strings.
 
 ## `lib.strings.levenshteinAtMost` {#function-library-lib.strings.levenshteinAtMost}
 
-`levenshteinAtMost :: int -> string -> string -> bool`
+**Type**: `levenshteinAtMost :: int -> string -> string -> bool`
 
 Returns whether the levenshtein distance between two strings is at most some value
 Complexity is O(min(n,m)) for k <= 2 and O(n*m) otherwise
