@@ -806,18 +806,6 @@ escapeXML ''"test" 'test' < & >''
 
 Located at [lib/strings.nix:543](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L543) in `<nixpkgs>`.
 
-## `lib.strings.replaceChars` {#function-library-lib.strings.replaceChars}
-
-warning added 12-12-2022
-
-Located at [lib/strings.nix:548](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L548) in `<nixpkgs>`.
-
-## `lib.strings.lowerChars` {#function-library-lib.strings.lowerChars}
-
-Case conversion utilities.
-
-Located at [lib/strings.nix:551](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L551) in `<nixpkgs>`.
-
 ## `lib.strings.toLower` {#function-library-lib.strings.toLower}
 
 **Type**: `toLower :: string -> string`

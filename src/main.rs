@@ -105,10 +105,10 @@ impl DocItem {
 }
 
 /// Retrieve documentation comments.
-fn retrieve_doc_comment(node: &SyntaxNode) -> Option<String> {
+fn retrieve_doc_comment(node: &SyntaxNode, allow_line_comments: bool) -> Option<String> {
     // if the current node has a doc comment it'll be immediately preceded by that comment,
     // or there will be a whitespace token and *then* the comment tokens before it. we merge
-    // multiple single-line comments into one large comment if they are on adjacent lines for
+    // multiple line comments into one large comment if they are on adjacent lines for
     // documentation simplicity.
     let mut token = node.first_token()?.prev_token()?;
     if token.kind() == SyntaxKind::TOKEN_WHITESPACE {
@@ -118,36 +118,55 @@ fn retrieve_doc_comment(node: &SyntaxNode) -> Option<String> {
         return None;
     }
 
-    // backtrack to the start of the doc comment, allowing only a single multi-line comment
-    // or adjacent single-line comments.
-    // we don't care much about optimization here, doc comments aren't long enough for that.
+    // if we want to ignore line comments (eg because they may contain deprecation
+    // comments on attributes) we'll backtrack to the first preceding multiline comment.
+    while !allow_line_comments && token.text().starts_with("#") {
+        token = token.prev_token()?;
+        if token.kind() == SyntaxKind::TOKEN_WHITESPACE {
+            token = token.prev_token()?;
+        }
+        if token.kind() != SyntaxKind::TOKEN_COMMENT {
+            return None;
+        }
+    }
+
     if token.text().starts_with("/*") {
         return Some(Comment::cast(token)?.text().to_string());
     }
-    let mut result = String::new();
-    while let Some(comment) = Comment::cast(token) {
-        result.insert_str(0, comment.text());
-        let ws = match comment.syntax().prev_token() {
-            Some(t) if t.kind() == SyntaxKind::TOKEN_WHITESPACE => t,
-            _ => break,
-        };
-        // only adjacent lines continue a doc comment, empty lines do not.
-        match ws.text().strip_prefix("\n") {
-            Some(trail) if !trail.contains("\n") => result.insert_str(0, ws.text()),
-            _ => break,
+
+    // backtrack to the start of the doc comment, allowing only adjacent line comments.
+    // we don't care much about optimization here, doc comments aren't long enough for that.
+    if token.text().starts_with("#") {
+        let mut result = String::new();
+        while let Some(comment) = Comment::cast(token) {
+            if !comment.syntax().text().starts_with("#") {
+                break;
+            }
+            result.insert_str(0, comment.text().trim());
+            let ws = match comment.syntax().prev_token() {
+                Some(t) if t.kind() == SyntaxKind::TOKEN_WHITESPACE => t,
+                _ => break,
+            };
+            // only adjacent lines continue a doc comment, empty lines do not.
+            match ws.text().strip_prefix("\n") {
+                Some(trail) if !trail.contains("\n") => result.insert_str(0, " "),
+                _ => break,
+            }
+            token = match ws.prev_token() {
+                Some(c) => c,
+                _ => break,
+            };
         }
-        token = match ws.prev_token() {
-            Some(c) => c,
-            _ => break,
-        };
+        return Some(result);
     }
-    Some(result)
+
+    None
 }
 
 /// Transforms an AST node into a `DocItem` if it has a leading
 /// documentation comment.
 fn retrieve_doc_item(node: &AttrpathValue) -> Option<DocItem> {
-    let comment = retrieve_doc_comment(node.syntax())?;
+    let comment = retrieve_doc_comment(node.syntax(), false)?;
     let ident = node.attrpath().unwrap();
     // TODO this should join attrs() with '.' to handle whitespace, dynamic attrs and string
     // attrs. none of these happen in nixpkgs lib, and the latter two should probably be
@@ -219,7 +238,7 @@ fn collect_lambda_args(mut lambda: Lambda) -> Vec<Argument> {
             Param::IdentParam(id) => {
                 args.push(Argument::Flat(SingleArg {
                     name: id.to_string(),
-                    doc: retrieve_doc_comment(id.syntax()),
+                    doc: retrieve_doc_comment(id.syntax(), true),
                 }));
             }
             Param::Pattern(pat) => {
@@ -227,7 +246,7 @@ fn collect_lambda_args(mut lambda: Lambda) -> Vec<Argument> {
                     .pat_entries()
                     .map(|entry| SingleArg {
                         name: entry.ident().unwrap().to_string(),
-                        doc: retrieve_doc_comment(entry.syntax()),
+                        doc: retrieve_doc_comment(entry.syntax(), true),
                     })
                     .collect();
 
@@ -407,6 +426,24 @@ fn test_arg_formatting() {
 fn test_inherited_exports() {
     let mut output = Vec::new();
     let src = fs::read_to_string("test/inherited-exports.nix").unwrap();
+    let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
+    let category = "let";
+
+    for entry in collect_entries(nix, category) {
+        entry
+            .write_section(&Default::default(), &mut output)
+            .expect("Failed to write section")
+    }
+
+    let output = String::from_utf8(output).expect("not utf8");
+
+    insta::assert_snapshot!(output);
+}
+
+#[test]
+fn test_line_comments() {
+    let mut output = Vec::new();
+    let src = fs::read_to_string("test/line-comments.nix").unwrap();
     let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
     let category = "let";
 
