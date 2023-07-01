@@ -17,13 +17,13 @@
 //! representing a single entry in the manual.
 
 use failure::Error;
-use std::iter::repeat;
+use std::collections::HashMap;
 
 use std::io::Write;
 
 /// Represent a single function argument name and its (optional)
 /// doc-string.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct SingleArg {
     pub name: String,
     pub doc: Option<String>,
@@ -31,7 +31,7 @@ pub struct SingleArg {
 
 /// Represent a function argument, which is either a flat identifier
 /// or a pattern set.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Argument {
     /// Flat function argument (e.g. `n: n * 2`).
     Flat(SingleArg),
@@ -40,48 +40,40 @@ pub enum Argument {
     Pattern(Vec<SingleArg>),
 }
 
-fn print_indented<W: Write>(writer: &mut W, indent: usize, text: &str) -> Result<(), Error> {
-    let prefix = repeat(' ').take(indent).collect::<String>();
-    writeln!(
-        writer,
-        "{}",
-        text.replace("\r\n", "\n")
-            .replace("\n", &format!("\n{prefix}"))
-    )?;
-
-    Ok(())
-}
-
 impl Argument {
     /// Write CommonMark structure for a single function argument.
-    fn write_argument<W: Write>(self, writer: &mut W, indent: usize) -> Result<(), Error> {
+    fn format_argument(self) -> String {
         match self {
             // Write a flat argument entry.
             Argument::Flat(arg) => {
-                let arg_text = format!(
+                format!(
                     "`{}`\n\n: {}\n\n",
                     arg.name,
                     arg.doc.unwrap_or("Function argument".into()).trim()
-                );
-                print_indented(writer, indent, &arg_text)?;
+                )
             }
 
             // Write a pattern argument entry and its individual
             // parameters as a nested structure.
             Argument::Pattern(pattern_args) => {
-                print_indented(writer, indent, "structured function argument\n\n: ")?;
+                let mut inner = String::new();
                 for pattern_arg in pattern_args {
-                    Argument::Flat(pattern_arg).write_argument(writer, indent + 2)?;
+                    inner += &Argument::Flat(pattern_arg).format_argument();
                 }
+
+                let indented = textwrap::indent(&inner, "  ");
+                // drop leading indentation, the `: ` serves this function already
+                format!(
+                    "structured function argument\n\n: {}",
+                    indented.trim_start()
+                )
             }
         }
-
-        Ok(())
     }
 }
 
 /// Represents a single manual section describing a library function.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ManualEntry {
     /// Name of the function category (e.g. 'strings', 'trivial', 'attrsets')
     pub category: String,
@@ -106,7 +98,11 @@ pub struct ManualEntry {
 
 impl ManualEntry {
     /// Write a single CommonMark entry for a documented Nix function.
-    pub fn write_section<W: Write>(self, writer: &mut W) -> Result<(), Error> {
+    pub fn write_section<W: Write>(
+        self,
+        locs: &HashMap<String, String>,
+        writer: &mut W,
+    ) -> Result<(), Error> {
         let title = format!("lib.{}.{}", self.category, self.name);
         let ident = format!(
             "lib.{}.{}",
@@ -118,7 +114,7 @@ impl ManualEntry {
 
         // <subtitle> (type signature)
         if let Some(t) = &self.fn_type {
-            writeln!(writer, "`{}`\n", t)?;
+            writeln!(writer, "**Type**: `{}`\n", t)?;
         }
 
         // Primary doc string
@@ -130,7 +126,7 @@ impl ManualEntry {
         // Function argument names
         if !self.args.is_empty() {
             for arg in self.args {
-                arg.write_argument(writer, 0)?;
+                writeln!(writer, "{}", arg.format_argument())?;
             }
         }
 
@@ -141,14 +137,16 @@ impl ManualEntry {
         if let Some(example) = &self.example {
             writeln!(
                 writer,
-                "### {} usage example {{#function-library-example-{}}}\n",
-                title, ident
+                "::: {{.example #function-library-example-{}}}",
+                ident
             )?;
-            writeln!(writer, "```nix{}```\n", example)?;
+            writeln!(writer, "# `{}` usage example\n", title)?;
+            writeln!(writer, "```nix\n{}\n```\n:::\n", example.trim())?;
         }
 
-        // TODO: add source links
-        //println!("[Source](#function-location-{})", ident);
+        if let Some(loc) = locs.get(&ident) {
+            writeln!(writer, "Located at {loc}.\n")?;
+        }
 
         Ok(())
     }

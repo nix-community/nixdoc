@@ -1,0 +1,24 @@
+---
+source: src/main.rs
+expression: output
+---
+## `lib.let.shown` {#function-library-lib.let.shown}
+
+is a doc comment
+
+`a`
+
+: a doc comment
+
+
+`b`
+
+: also a doc comment
+
+
+`c`
+
+: a doc comment with continuation
+
+
+
