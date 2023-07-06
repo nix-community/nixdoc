@@ -4,7 +4,6 @@ version = "2.3.0"
 authors = ["Vincent Ambo <mail@tazj.in>", "asymmetric"]
 
 [dependencies]
-xml-rs = "0.8"
 structopt = "0.2"
 failure = "0.1"
 rnix = "0.11"
