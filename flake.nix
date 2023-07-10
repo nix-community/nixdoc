@@ -29,6 +29,16 @@
           name = package.name;
         };
 
+        checks = {
+          test = self.packages.${system}.default;
+
+          clippy = self.packages.${system}.default.overrideAttrs (_: {
+            checkPhase = ''
+              ${pkgs.clippy}/bin/cargo-clippy
+            '';
+          });
+        };
+
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
             cargo
