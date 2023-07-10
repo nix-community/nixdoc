@@ -87,7 +87,7 @@ struct DocItem {
 }
 
 impl DocItem {
-    fn to_entry(self, category: &str) -> ManualEntry {
+    fn into_entry(self, category: &str) -> ManualEntry {
         ManualEntry {
             category: category.to_string(),
             name: self.name,
@@ -120,7 +120,7 @@ fn retrieve_doc_comment(node: &SyntaxNode, allow_line_comments: bool) -> Option<
 
     // if we want to ignore line comments (eg because they may contain deprecation
     // comments on attributes) we'll backtrack to the first preceding multiline comment.
-    while !allow_line_comments && token.text().starts_with("#") {
+    while !allow_line_comments && token.text().starts_with('#') {
         token = token.prev_token()?;
         if token.kind() == SyntaxKind::TOKEN_WHITESPACE {
             token = token.prev_token()?;
@@ -136,10 +136,10 @@ fn retrieve_doc_comment(node: &SyntaxNode, allow_line_comments: bool) -> Option<
 
     // backtrack to the start of the doc comment, allowing only adjacent line comments.
     // we don't care much about optimization here, doc comments aren't long enough for that.
-    if token.text().starts_with("#") {
+    if token.text().starts_with('#') {
         let mut result = String::new();
         while let Some(comment) = Comment::cast(token) {
-            if !comment.syntax().text().starts_with("#") {
+            if !comment.syntax().text().starts_with('#') {
                 break;
             }
             result.insert_str(0, comment.text().trim());
@@ -148,8 +148,8 @@ fn retrieve_doc_comment(node: &SyntaxNode, allow_line_comments: bool) -> Option<
                 _ => break,
             };
             // only adjacent lines continue a doc comment, empty lines do not.
-            match ws.text().strip_prefix("\n") {
-                Some(trail) if !trail.contains("\n") => result.insert_str(0, " "),
+            match ws.text().strip_prefix('\n') {
+                Some(trail) if !trail.contains('\n') => result.insert(0, ' '),
                 _ => break,
             }
             token = match ws.prev_token() {
@@ -295,8 +295,9 @@ fn collect_bindings(
                 let mut entries = vec![];
                 for child in n.children() {
                     if let Some(apv) = AttrpathValue::cast(child.clone()) {
-                        entries
-                            .extend(collect_entry_information(apv).map(|di| di.to_entry(category)));
+                        entries.extend(
+                            collect_entry_information(apv).map(|di| di.into_entry(category)),
+                        );
                     } else if let Some(inh) = Inherit::cast(child) {
                         // `inherit (x) ...` needs much more handling than we can
                         // reasonably do here
@@ -334,7 +335,7 @@ fn collect_entries(root: rnix::Root, category: &str) -> Vec<ManualEntry> {
                     n.children()
                         .filter_map(AttrpathValue::cast)
                         .filter_map(collect_entry_information)
-                        .map(|di| (di.name.to_string(), di.to_entry(category)))
+                        .map(|di| (di.name.to_string(), di.into_entry(category)))
                         .collect(),
                 );
             }
