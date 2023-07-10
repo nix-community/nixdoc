@@ -3,14 +3,15 @@ name = "nixdoc"
 version = "2.3.0"
 authors = ["Vincent Ambo <mail@tazj.in>", "asymmetric"]
 edition = "2021"
+description = "Generate CommonMark from Nix library functions"
 
 [dependencies]
-structopt = "0.2"
 rnix = "0.11"
 rowan = "0.15.11"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 textwrap = "0.16"
+clap = { version = "4.3.11", features = ["derive"] }
 
 [dev-dependencies]
 insta = "1.30.0"
