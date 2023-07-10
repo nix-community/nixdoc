@@ -21,7 +21,6 @@
 //! * extract line number & add it to generated output
 //! * figure out how to specify examples (& leading whitespace?!)
 
-extern crate failure;
 extern crate rnix;
 extern crate rowan;
 extern crate structopt;
