@@ -34,7 +34,7 @@
 
           clippy = self.packages.${system}.default.overrideAttrs (_: {
             checkPhase = ''
-              ${pkgs.clippy}/bin/cargo-clippy
+              ${pkgs.clippy}/bin/cargo-clippy --no-deps -- -D warnings
             '';
           });
         };
