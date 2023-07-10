@@ -16,10 +16,9 @@
 //! This module implements CommonMark output for a struct
 //! representing a single entry in the manual.
 
-use failure::Error;
 use std::collections::HashMap;
 
-use std::io::Write;
+use std::io::{Result, Write};
 
 /// Represent a single function argument name and its (optional)
 /// doc-string.
@@ -102,7 +101,7 @@ impl ManualEntry {
         self,
         locs: &HashMap<String, String>,
         writer: &mut W,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         let title = format!("lib.{}.{}", self.category, self.name);
         let ident = format!(
             "lib.{}.{}",
