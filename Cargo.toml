@@ -5,7 +5,7 @@ authors = ["Vincent Ambo <mail@tazj.in>", "asymmetric"]
 edition = "2021"
 
 [dependencies]
-structopt = "0.2"
+structopt = "0.3"
 rnix = "0.11"
 rowan = "0.15.11"
 serde = { version = "1.0", features = ["derive"] }
