@@ -35,31 +35,28 @@ use std::collections::HashMap;
 use std::io;
 use std::io::Write;
 
+use clap::Parser;
 use std::path::PathBuf;
-use structopt::StructOpt;
 
 /// Command line arguments for nixdoc
-#[derive(Debug, StructOpt)]
-#[structopt(
-    name = "nixdoc",
-    about = "Generate CommonMark from Nix library functions"
-)]
+#[derive(Debug, Parser)]
+#[command(author, version, about)]
 struct Options {
-    /// Nix file to process.
-    #[structopt(short = "f", long = "file", parse(from_os_str))]
-    file: PathBuf,
-
-    /// Path to a file containing location data as JSON.
-    #[structopt(short = "l", long = "locs", parse(from_os_str))]
-    locs: Option<PathBuf>,
-
     /// Name of the function category (e.g. 'strings', 'attrsets').
-    #[structopt(short = "c", long = "category")]
+    #[arg(short, long)]
     category: String,
 
     /// Description of the function category.
-    #[structopt(short = "d", long = "description")]
+    #[arg(short, long)]
     description: String,
+
+    /// Nix file to process.
+    #[arg(short, long)]
+    file: PathBuf,
+
+    /// Path to a file containing location data as JSON.
+    #[arg(short, long)]
+    locs: Option<PathBuf>,
 }
 
 #[derive(Debug)]
@@ -346,7 +343,7 @@ fn collect_entries(root: rnix::Root, category: &str) -> Vec<ManualEntry> {
 
 fn main() {
     let mut output = io::stdout();
-    let opts = Options::from_args();
+    let opts = Options::parse();
     let src = fs::read_to_string(&opts.file).unwrap();
     let locs = match opts.locs {
         None => Default::default(),
