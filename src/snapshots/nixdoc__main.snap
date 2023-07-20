@@ -689,8 +689,8 @@ assume a shell that understands Bash syntax (e.g. Bash or ZSH).
 
 ```nix
 ''
-${toShellVar "foo" "some string"}
-[[ "$foo" == "some string" ]]
+  ${toShellVar "foo" "some string"}
+  [[ "$foo" == "some string" ]]
 ''
 ```
 :::
@@ -714,11 +714,11 @@ using `toShellVar`.
 
 ```nix
 let
-foo = "value";
-bar = foo;
+  foo = "value";
+  bar = foo;
 in ''
-${toShellVars { inherit foo bar; }}
-[[ "$foo" == "$bar" ]]
+  ${toShellVars { inherit foo bar; }}
+  [[ "$foo" == "$bar" ]]
 ''
 ```
 :::
@@ -1092,7 +1092,10 @@ Located at [lib/strings.nix:735](https://github.com/NixOS/nixpkgs/blob/580dd2124
 
 ## `lib.strings.mesonOption` {#function-library-lib.strings.mesonOption}
 
-**Type**: `mesonOption :: string -> string -> string@param feature The feature to be set@param value The desired value`
+**Type**: `mesonOption :: string -> string -> string
+
+@param feature The feature to be set
+@param value The desired value`
 
 Create a -D<feature>=<value> string that can be passed to typical Meson
 invocations.
@@ -1120,7 +1123,10 @@ Located at [lib/strings.nix:754](https://github.com/NixOS/nixpkgs/blob/580dd2124
 
 ## `lib.strings.mesonBool` {#function-library-lib.strings.mesonBool}
 
-**Type**: `mesonBool :: string -> bool -> string@param condition The condition to be made true or false@param flag The controlling flag of the condition`
+**Type**: `mesonBool :: string -> bool -> string
+
+@param condition The condition to be made true or false
+@param flag The controlling flag of the condition`
 
 Create a -D<condition>={true,false} string that can be passed to typical
 Meson invocations.
@@ -1150,7 +1156,10 @@ Located at [lib/strings.nix:773](https://github.com/NixOS/nixpkgs/blob/580dd2124
 
 ## `lib.strings.mesonEnable` {#function-library-lib.strings.mesonEnable}
 
-**Type**: `mesonEnable :: string -> bool -> string@param feature The feature to be enabled or disabled@param flag The controlling flag`
+**Type**: `mesonEnable :: string -> bool -> string
+
+@param feature The feature to be enabled or disabled
+@param flag The controlling flag`
 
 Create a -D<feature>={enabled,disabled} string that can be passed to
 typical Meson invocations.
@@ -1379,7 +1388,7 @@ floatToString 0.000001
 => "0.000001"
 floatToString 0.0000001
 => trace: warning: Imprecise conversion from float to string 0.000000
-"0.000000"
+   "0.000000"
 ```
 :::
 
@@ -1529,12 +1538,12 @@ NOTE: This function is not performant and should be avoided.
 
 ```nix
 readPathsFromFile /prefix
-./pkgs/development/libraries/qt-5/5.4/qtbase/series
+  ./pkgs/development/libraries/qt-5/5.4/qtbase/series
 => [ "/prefix/dlopen-resolv.patch" "/prefix/tzdir.patch"
-"/prefix/dlopen-libXcursor.patch" "/prefix/dlopen-openssl.patch"
-"/prefix/dlopen-dbus.patch" "/prefix/xdg-config-dirs.patch"
-"/prefix/nix-profiles-library-paths.patch"
-"/prefix/compose-search-path.patch" ]
+     "/prefix/dlopen-libXcursor.patch" "/prefix/dlopen-openssl.patch"
+     "/prefix/dlopen-dbus.patch" "/prefix/xdg-config-dirs.patch"
+     "/prefix/nix-profiles-library-paths.patch"
+     "/prefix/compose-search-path.patch" ]
 ```
 :::
 

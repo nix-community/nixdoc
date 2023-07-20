@@ -30,6 +30,7 @@ use rnix::{
 };
 use rowan::{ast::AstNode, WalkEvent};
 use std::fs;
+use textwrap::dedent;
 
 use std::collections::HashMap;
 use std::io;
@@ -172,7 +173,34 @@ fn retrieve_doc_item(node: &AttrpathValue) -> Option<DocItem> {
     })
 }
 
-/// *Really* dumb, mutable, hacky doc comment "parser".
+/// Dedent everything but the first line, whose indentation gets fully removed all the time
+///
+/// A doc comment like this in Nix:
+///
+/// {
+///   /* foo is
+///   the value:
+///     10
+///   */
+///   foo = 10;
+/// }
+///
+/// The parser turns this into "foo is\n  the value:\n    10\n" where the first
+/// line has no leading indentation, but the rest do
+///
+/// To align all lines to the same indentation, while preserving the
+/// formatting, we dedent all but the first line, while stripping any potential
+/// indentation from the first line.
+fn handle_indentation(raw: &str) -> Option<String> {
+    let result: String = match raw.split_once('\n') {
+        Some((first, rest)) => format!("{}\n{}", first.trim(), dedent(rest)),
+        None => raw.into(),
+    };
+
+    Some(result.trim().to_owned()).filter(|s| !s.is_empty())
+}
+
+/// Dumb, mutable, hacky doc comment "parser".
 fn parse_doc_comment(raw: &str) -> DocComment {
     enum ParseState {
         Doc,
@@ -180,43 +208,36 @@ fn parse_doc_comment(raw: &str) -> DocComment {
         Example,
     }
 
-    let mut doc = String::new();
-    let mut doc_type = String::new();
-    let mut example = String::new();
     let mut state = ParseState::Doc;
 
-    for line in raw.trim().lines() {
-        let mut line = line.trim();
+    // Split the string into three parts, docs, type and example
+    let mut doc_str = String::new();
+    let mut type_str = String::new();
+    let mut example_str = String::new();
 
-        if line.starts_with("Type:") {
+    for line in raw.split_inclusive('\n') {
+        let trimmed_line = line.trim();
+        if let Some(suffix) = trimmed_line.strip_prefix("Type:") {
             state = ParseState::Type;
-            line = &line[5..]; // trim 'Type:'
-        }
-
-        if line.starts_with("Example:") {
+            type_str.push_str(suffix);
+            type_str.push('\n');
+        } else if let Some(suffix) = trimmed_line.strip_prefix("Example:") {
             state = ParseState::Example;
-            line = &line[8..]; // trim 'Example:'
-        }
-
-        match state {
-            ParseState::Type => doc_type.push_str(line.trim()),
-            ParseState::Doc => {
-                doc.push_str(line.trim());
-                doc.push('\n');
-            }
-            ParseState::Example => {
-                example.push_str(line.trim());
-                example.push('\n');
+            example_str.push_str(suffix);
+            example_str.push('\n');
+        } else {
+            match state {
+                ParseState::Doc => doc_str.push_str(line),
+                ParseState::Type => type_str.push_str(line),
+                ParseState::Example => example_str.push_str(line),
             }
         }
     }
 
-    let f = |s: String| if s.is_empty() { None } else { Some(s) };
-
     DocComment {
-        doc: doc.trim().into(),
-        doc_type: f(doc_type),
-        example: f(example),
+        doc: handle_indentation(&doc_str).unwrap_or(String::new()),
+        doc_type: handle_indentation(&type_str),
+        example: handle_indentation(&example_str),
     }
 }
 
