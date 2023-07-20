@@ -1092,10 +1092,13 @@ Located at [lib/strings.nix:735](https://github.com/NixOS/nixpkgs/blob/580dd2124
 
 ## `lib.strings.mesonOption` {#function-library-lib.strings.mesonOption}
 
-**Type**: `mesonOption :: string -> string -> string
+**Type**:
+```
+mesonOption :: string -> string -> string
 
 @param feature The feature to be set
-@param value The desired value`
+@param value The desired value
+```
 
 Create a -D<feature>=<value> string that can be passed to typical Meson
 invocations.
@@ -1123,10 +1126,13 @@ Located at [lib/strings.nix:754](https://github.com/NixOS/nixpkgs/blob/580dd2124
 
 ## `lib.strings.mesonBool` {#function-library-lib.strings.mesonBool}
 
-**Type**: `mesonBool :: string -> bool -> string
+**Type**:
+```
+mesonBool :: string -> bool -> string
 
 @param condition The condition to be made true or false
-@param flag The controlling flag of the condition`
+@param flag The controlling flag of the condition
+```
 
 Create a -D<condition>={true,false} string that can be passed to typical
 Meson invocations.
@@ -1156,10 +1162,13 @@ Located at [lib/strings.nix:773](https://github.com/NixOS/nixpkgs/blob/580dd2124
 
 ## `lib.strings.mesonEnable` {#function-library-lib.strings.mesonEnable}
 
-**Type**: `mesonEnable :: string -> bool -> string
+**Type**:
+```
+mesonEnable :: string -> bool -> string
 
 @param feature The feature to be enabled or disabled
-@param flag The controlling flag`
+@param flag The controlling flag
+```
 
 Create a -D<feature>={enabled,disabled} string that can be passed to
 typical Meson invocations.

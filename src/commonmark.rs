@@ -113,7 +113,11 @@ impl ManualEntry {
 
         // <subtitle> (type signature)
         if let Some(t) = &self.fn_type {
-            writeln!(writer, "**Type**: `{}`\n", t)?;
+            if t.lines().count() > 1 {
+                writeln!(writer, "**Type**:\n```\n{}\n```\n", t)?;
+            } else {
+                writeln!(writer, "**Type**: `{}`\n", t)?;
+            }
         }
 
         // Primary doc string
