@@ -45,6 +45,7 @@
             cargo-insta
             clippy
             rustfmt
+            rustc
           ];
         };
       });
