@@ -32,8 +32,9 @@
         checks = {
           test = self.packages.${system}.default;
 
-          clippy = self.packages.${system}.default.overrideAttrs (_: {
+          ci = self.packages.${system}.default.overrideAttrs (_: {
             checkPhase = ''
+              ${pkgs.rustfmt}/bin/rustfmt --check src/**.rs
               ${pkgs.clippy}/bin/cargo-clippy --no-deps -- -D warnings
             '';
           });
