@@ -30,10 +30,8 @@
         };
 
         checks = {
-          test = self.packages.${system}.default;
-
-          ci = self.packages.${system}.default.overrideAttrs (_: {
-            checkPhase = ''
+          test = self.packages.${system}.default.overrideAttrs (drvAttrs: {
+            postCheck = drvAttrs.postCheck or "" + ''
               ${pkgs.rustfmt}/bin/rustfmt --check src/**.rs
               ${pkgs.clippy}/bin/cargo-clippy --no-deps -- -D warnings
             '';
