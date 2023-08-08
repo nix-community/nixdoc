@@ -54,5 +54,5 @@ This project requires a nightly Rust compiler build.
 
 [rnix]: https://gitlab.com/jD91mZM2/rnix
 [this Discourse thread]: https://discourse.nixos.org/t/nixpkgs-library-function-documentation-doc-tests/1156
-[this example]: https://storage.googleapis.com/files.tazj.in/nixdoc/manual.html#sec-functions-library-strings
+[this example]: https://nixos.org/manual/nixpkgs/stable/#sec-functions-library-strings
 [issues]: https://github.com/nix-community/nixdoc/issues
