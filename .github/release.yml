@@ -4,3 +4,7 @@ changelog:
       - dependabot
     labels:
       - chore
+  contributors:
+    exclude:
+      names:
+        - dependabot
