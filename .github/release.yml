@@ -4,8 +4,3 @@ changelog:
       - dependabot
     labels:
       - chore
-  categories:
-    - title: What's Changed
-      labels:
-        - "*"
-
