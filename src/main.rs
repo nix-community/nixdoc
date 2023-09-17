@@ -272,7 +272,9 @@ fn collect_lambda_args(mut lambda: Lambda) -> Vec<Argument> {
             Param::IdentParam(id) => {
                 args.push(Argument::Flat(SingleArg {
                     name: id.to_string(),
-                    doc: retrieve_doc_comment(id.syntax(), true),
+                    doc: handle_indentation(
+                        &retrieve_doc_comment(id.syntax(), true).unwrap_or_default(),
+                    ),
                 }));
             }
             // an attribute set, e.g. `foo = { a }: a`
@@ -282,7 +284,9 @@ fn collect_lambda_args(mut lambda: Lambda) -> Vec<Argument> {
                     .pat_entries()
                     .map(|entry| SingleArg {
                         name: entry.ident().unwrap().to_string(),
-                        doc: retrieve_doc_comment(entry.syntax(), true),
+                        doc: handle_indentation(
+                            &retrieve_doc_comment(entry.syntax(), true).unwrap_or_default(),
+                        ),
                     })
                     .collect();
 
