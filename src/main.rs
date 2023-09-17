@@ -100,7 +100,7 @@ impl DocItem {
 /// Retrieve documentation comments.
 fn retrieve_doc_comment(node: &SyntaxNode, allow_line_comments: bool) -> Option<String> {
     // if the current node has a doc comment it'll be immediately preceded by that comment,
-    // or there will be a whitespace token and *then* the comment tokens before it. we merge
+    // or there will be a whitespace token and *then* the comment tokens before it. We merge
     // multiple line comments into one large comment if they are on adjacent lines for
     // documentation simplicity.
     let mut token = node.first_token()?.prev_token()?;
@@ -173,10 +173,11 @@ fn retrieve_doc_item(node: &AttrpathValue) -> Option<DocItem> {
     })
 }
 
-/// Dedent everything but the first line, whose indentation gets fully removed all the time
+/// Ensure all lines in a multi-line doc-comments have the same indentation.
 ///
-/// A doc comment like this in Nix:
+/// Consider such a doc comment:
 ///
+/// ```nix
 /// {
 ///   /* foo is
 ///   the value:
@@ -184,16 +185,35 @@ fn retrieve_doc_item(node: &AttrpathValue) -> Option<DocItem> {
 ///   */
 ///   foo = 10;
 /// }
+/// ```
 ///
-/// The parser turns this into "foo is\n  the value:\n    10\n" where the first
-/// line has no leading indentation, but the rest do
+/// The parser turns this into:
 ///
-/// To align all lines to the same indentation, while preserving the
-/// formatting, we dedent all but the first line, while stripping any potential
-/// indentation from the first line.
+/// ```
+/// foo is
+///   the value:
+///     10
+/// ```
+///
+///
+/// where the first line has no leading indentation, and all other lines have preserved their
+/// original indentation.
+///
+/// What we want instead is:
+///
+/// ```
+/// foo is
+/// the value:
+///   10
+/// ```
+///
+/// i.e. we want the whole thing to be dedented. To achieve this, we remove all leading whitespace
+/// from the first line, and remove all common whitespace from the rest of the string.
 fn handle_indentation(raw: &str) -> Option<String> {
     let result: String = match raw.split_once('\n') {
-        Some((first, rest)) => format!("{}\n{}", first.trim(), dedent(rest)),
+        Some((first, rest)) => {
+            format!("{}\n{}", first.trim_start(), dedent(rest))
+        }
         None => raw.into(),
     };
 
@@ -248,13 +268,16 @@ fn collect_lambda_args(mut lambda: Lambda) -> Vec<Argument> {
 
     loop {
         match lambda.param().unwrap() {
+            // a variable, e.g. `id = x: x`
             Param::IdentParam(id) => {
                 args.push(Argument::Flat(SingleArg {
                     name: id.to_string(),
                     doc: retrieve_doc_comment(id.syntax(), true),
                 }));
             }
+            // an attribute set, e.g. `foo = { a }: a`
             Param::Pattern(pat) => {
+                // collect doc-comments for each attribute in the set
                 let pattern_vec: Vec<_> = pat
                     .pat_entries()
                     .map(|entry| SingleArg {
@@ -297,6 +320,9 @@ fn collect_entry_information(entry: AttrpathValue) -> Option<DocItem> {
     }
 }
 
+// a binding is an assignment, which can take place in an attrset
+// - as attributes
+// - as inherits
 fn collect_bindings(
     node: &SyntaxNode,
     category: &str,
@@ -334,6 +360,8 @@ fn collect_bindings(
     vec![]
 }
 
+// Main entrypoint for collection
+// TODO: document
 fn collect_entries(root: rnix::Root, category: &str) -> Vec<ManualEntry> {
     // we will look into the top-level let and its body for function docs.
     // we only need a single level of scope for this.
