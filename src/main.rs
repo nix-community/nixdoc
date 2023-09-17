@@ -503,3 +503,21 @@ fn test_line_comments() {
 
     insta::assert_snapshot!(output);
 }
+
+#[test]
+fn test_multi_line() {
+    let mut output = Vec::new();
+    let src = fs::read_to_string("test/multi-line.nix").unwrap();
+    let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
+    let category = "let";
+
+    for entry in collect_entries(nix, category) {
+        entry
+            .write_section(&Default::default(), &mut output)
+            .expect("Failed to write section")
+    }
+
+    let output = String::from_utf8(output).expect("not utf8");
+
+    insta::assert_snapshot!(output);
+}

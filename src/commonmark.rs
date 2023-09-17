@@ -53,7 +53,7 @@ impl Argument {
                 format!(
                     "`{}`\n\n: {}\n\n",
                     arg.name,
-                    arg.doc.unwrap_or("Function argument".into()).trim()
+                    handle_indentation(arg.doc.unwrap_or("Function argument".into()).trim())
                 )
             }
 
@@ -83,6 +83,22 @@ impl Argument {
             }
         }
     }
+}
+
+/// Since the first line starts with `: `, indent every other line by 2 spaces, so
+/// that the text aligns, to result in:
+///
+/// : first line
+///   every other line
+fn handle_indentation(raw: &str) -> String {
+    let result: String = match raw.split_once('\n') {
+        Some((first, rest)) => {
+            format!("{}\n{}", first, textwrap::indent(rest, "  "))
+        }
+        None => raw.into(),
+    };
+
+    result
 }
 
 /// Represents a single manual section describing a library function.
