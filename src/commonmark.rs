@@ -41,19 +41,30 @@ pub enum Argument {
 
 impl Argument {
     /// Write CommonMark structure for a single function argument.
+    /// We use the definition list extension, which prepends each argument with `: `.
+    /// For pattern arguments, we create a nested definition list.
     fn format_argument(self) -> String {
         match self {
-            // Write a flat argument entry.
+            // Write a flat argument entry, e.g. `id = x: x`
+            //
+            // `x`
+            // : Function argument
             Argument::Flat(arg) => {
                 format!(
                     "`{}`\n\n: {}\n\n",
                     arg.name,
-                    arg.doc.unwrap_or("Function argument".into()).trim()
+                    handle_indentation(arg.doc.unwrap_or("Function argument".into()).trim())
                 )
             }
 
             // Write a pattern argument entry and its individual
-            // parameters as a nested structure.
+            // parameters as a nested structure, e.g.:
+            //
+            // `foo = { a }: a`
+            //
+            // structured function argument
+            // : `a`
+            //   : Function argument
             Argument::Pattern(pattern_args) => {
                 let mut inner = String::new();
                 for pattern_arg in pattern_args {
@@ -61,13 +72,30 @@ impl Argument {
                 }
 
                 let indented = textwrap::indent(&inner, "  ");
-                // drop leading indentation, the `: ` serves this function already
+
                 format!(
+                    // The `:` creates another definition list of which `indented` is the term.
                     "structured function argument\n\n: {}",
+                    // drop leading indentation on the first line, the `: ` serves this function
+                    // already.
                     indented.trim_start()
                 )
             }
         }
+    }
+}
+
+/// Since the first line starts with `: `, indent every other line by 2 spaces, so
+/// that the text aligns, to result in:
+///
+/// : first line
+///   every other line
+fn handle_indentation(raw: &str) -> String {
+    match raw.split_once('\n') {
+        Some((first, rest)) => {
+            format!("{}\n{}", first, textwrap::indent(rest, "  "))
+        }
+        None => raw.into(),
     }
 }
 

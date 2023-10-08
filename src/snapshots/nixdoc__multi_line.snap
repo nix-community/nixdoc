@@ -1,0 +1,31 @@
+---
+source: src/main.rs
+expression: output
+---
+## `lib.let.f` {#function-library-lib.let.f}
+
+Some description
+
+structured function argument
+
+: `x`
+
+  : First line
+
+    Second line
+
+
+## `lib.let.g` {#function-library-lib.let.g}
+
+Some other description
+
+structured function argument
+
+: `x`
+
+  : First line
+
+    Second line
+
+
+
