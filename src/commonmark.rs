@@ -91,14 +91,12 @@ impl Argument {
 /// : first line
 ///   every other line
 fn handle_indentation(raw: &str) -> String {
-    let result: String = match raw.split_once('\n') {
+    match raw.split_once('\n') {
         Some((first, rest)) => {
             format!("{}\n{}", first, textwrap::indent(rest, "  "))
         }
         None => raw.into(),
-    };
-
-    result
+    }
 }
 
 /// Represents a single manual section describing a library function.
