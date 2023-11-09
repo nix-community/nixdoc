@@ -394,6 +394,19 @@ fn collect_entries(root: rnix::Root, category: &str) -> Vec<ManualEntry> {
     vec![]
 }
 
+fn retrieve_description(nix: &rnix::Root, description: &str, category: &str) -> String {
+    format!(
+        "# {} {{#sec-functions-library-{}}}\n{}\n",
+        description,
+        category,
+        &nix.syntax()
+            .first_child()
+            .and_then(|node| retrieve_doc_comment(&node, true))
+            .and_then(|comment| handle_indentation(&comment))
+            .unwrap_or_default()
+    )
+}
+
 fn main() {
     let mut output = io::stdout();
     let opts = Options::parse();
@@ -406,14 +419,10 @@ fn main() {
             .expect("could not read location information"),
     };
     let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
+    let description = retrieve_description(&nix, &opts.description, &opts.category);
 
     // TODO: move this to commonmark.rs
-    writeln!(
-        output,
-        "# {} {{#sec-functions-library-{}}}\n",
-        &opts.description, opts.category
-    )
-    .expect("Failed to write header");
+    writeln!(output, "{}", description).expect("Failed to write header");
 
     for entry in collect_entries(nix, &opts.category) {
         entry
@@ -442,6 +451,26 @@ fn test_main() {
     for entry in collect_entries(nix, category) {
         entry
             .write_section(&locs, &mut output)
+            .expect("Failed to write section")
+    }
+
+    let output = String::from_utf8(output).expect("not utf8");
+
+    insta::assert_snapshot!(output);
+}
+
+#[test]
+fn test_description_of_lib_debug() {
+    let mut output = Vec::new();
+    let src = fs::read_to_string("test/lib-debug.nix").unwrap();
+    let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
+    let category = "debug";
+    let desc = retrieve_description(&nix, &"Debug", category);
+    writeln!(output, "{}", desc).expect("Failed to write header");
+
+    for entry in collect_entries(nix, category) {
+        entry
+            .write_section(&Default::default(), &mut output)
             .expect("Failed to write section")
     }
 
