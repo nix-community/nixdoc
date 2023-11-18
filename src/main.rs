@@ -401,7 +401,7 @@ fn retrieve_description(nix: &rnix::Root, description: &str, category: &str) -> 
         category,
         &nix.syntax()
             .first_child()
-            .and_then(|node| retrieve_doc_comment(&node, true))
+            .and_then(|node| retrieve_doc_comment(&node, false))
             .and_then(|comment| handle_indentation(&comment))
             .unwrap_or_default()
     )
