@@ -1,23 +1,14 @@
-nixdoc
-======
+# nixdoc
 
-This tool is (for now) a proof-of-concept to generate documentation
-for Nix library functions from the source files in `nixpkgs/lib`.
+This tool is used to generate reference documentation for Nix library functions defined in [Nixpkgs' `lib`](https://github.com/NixOS/nixpkgs/tree/master/lib).
 
-It uses [rnix][] to parse Nix source files, which are then transformed
-into a CommonMark (with some syntax extensions) representation of the
+Check out [this example](https://nixos.org/manual/nixpkgs/unstable/#sec-functions-library-strings) of documentation generated for the [`lib/strings.nix`](https://github.com/NixOS/nixpkgs/blob/nixpkgs-unstable/lib/strings.nix) file.
+
+It uses [rnix](https://github.com/nix-community/rnix-parser) to parse Nix source files,
+which are then transformed into a CommonMark (with some syntax extensions) representation of the
 function set.
 
-Please see [this Discourse thread][] for information on the
-documentation format and general discussion.
-
-Check out [this example][] of documentation generated for the
-`strings.nix` file.
-
 ## Comment format
-
-(Note: The parser for this is a quick hack, I don't want to spend time
-writing a better one before I know how it's supposed to work.)
 
 Currently, identifiers are included in the documentation if they have
 a preceding comment in multiline syntax `/* something */`.
@@ -46,13 +37,4 @@ myFunction =
 
 ## Caveats & TODOs
 
-Please check the [issues][] page.
-
-## Building
-
-This project requires a nightly Rust compiler build.
-
-[rnix]: https://gitlab.com/jD91mZM2/rnix
-[this Discourse thread]: https://discourse.nixos.org/t/nixpkgs-library-function-documentation-doc-tests/1156
-[this example]: https://nixos.org/manual/nixpkgs/stable/#sec-functions-library-strings
-[issues]: https://github.com/nix-community/nixdoc/issues
+Please check the [issues](https://github.com/nix-community/nixdoc/issues) page.
