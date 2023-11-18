@@ -14,4 +14,4 @@ textwrap = "0.16"
 clap = { version = "4.4.4", features = ["derive"] }
 
 [dev-dependencies]
-insta = "1.31.0"
+insta = "1.34.0"
