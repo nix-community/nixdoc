@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.7.0
+
+- Added support to customise the attribute set prefix, which was previously hardcoded to `lib`.
+  The default is still `lib`, but you can pass `--prefix` now to use something else like `utils`.
+
+  By @Janik-Haag in https://github.com/nix-community/nixdoc/pull/97
+
 ## 2.6.0
 
 - After doing a great job of maintaining the project for this year, @asymmetric is passing on the torch to @infinisil!

@@ -43,6 +43,10 @@ use std::path::PathBuf;
 #[derive(Debug, Parser)]
 #[command(author, version, about)]
 struct Options {
+    /// Prefix for the category (e.g. 'lib' or 'utils').
+    #[arg(short, long, default_value_t = String::from("lib"))]
+    prefix: String,
+
     /// Name of the function category (e.g. 'strings', 'attrsets').
     #[arg(short, long)]
     category: String,
@@ -80,8 +84,9 @@ struct DocItem {
 }
 
 impl DocItem {
-    fn into_entry(self, category: &str) -> ManualEntry {
+    fn into_entry(self, prefix: &str, category: &str) -> ManualEntry {
         ManualEntry {
+            prefix: prefix.to_string(),
             category: category.to_string(),
             name: self.name,
             description: self
@@ -329,6 +334,7 @@ fn collect_entry_information(entry: AttrpathValue) -> Option<DocItem> {
 // - as inherits
 fn collect_bindings(
     node: &SyntaxNode,
+    prefix: &str,
     category: &str,
     scope: HashMap<String, ManualEntry>,
 ) -> Vec<ManualEntry> {
@@ -339,7 +345,8 @@ fn collect_bindings(
                 for child in n.children() {
                     if let Some(apv) = AttrpathValue::cast(child.clone()) {
                         entries.extend(
-                            collect_entry_information(apv).map(|di| di.into_entry(category)),
+                            collect_entry_information(apv)
+                                .map(|di| di.into_entry(prefix, category)),
                         );
                     } else if let Some(inh) = Inherit::cast(child) {
                         // `inherit (x) ...` needs much more handling than we can
@@ -366,7 +373,7 @@ fn collect_bindings(
 
 // Main entrypoint for collection
 // TODO: document
-fn collect_entries(root: rnix::Root, category: &str) -> Vec<ManualEntry> {
+fn collect_entries(root: rnix::Root, prefix: &str, category: &str) -> Vec<ManualEntry> {
     // we will look into the top-level let and its body for function docs.
     // we only need a single level of scope for this.
     // since only the body can export a function we don't need to implement
@@ -376,16 +383,17 @@ fn collect_entries(root: rnix::Root, category: &str) -> Vec<ManualEntry> {
             WalkEvent::Enter(n) if n.kind() == SyntaxKind::NODE_LET_IN => {
                 return collect_bindings(
                     LetIn::cast(n.clone()).unwrap().body().unwrap().syntax(),
+                    prefix,
                     category,
                     n.children()
                         .filter_map(AttrpathValue::cast)
                         .filter_map(collect_entry_information)
-                        .map(|di| (di.name.to_string(), di.into_entry(category)))
+                        .map(|di| (di.name.to_string(), di.into_entry(prefix, category)))
                         .collect(),
                 );
             }
             WalkEvent::Enter(n) if n.kind() == SyntaxKind::NODE_ATTR_SET => {
-                return collect_bindings(&n, category, Default::default());
+                return collect_bindings(&n, prefix, category, Default::default());
             }
             _ => (),
         }
@@ -424,7 +432,7 @@ fn main() {
     // TODO: move this to commonmark.rs
     writeln!(output, "{}", description).expect("Failed to write header");
 
-    for entry in collect_entries(nix, &opts.category) {
+    for entry in collect_entries(nix, &opts.prefix, &opts.category) {
         entry
             .write_section(&locs, &mut output)
             .expect("Failed to write section")
@@ -438,6 +446,7 @@ fn test_main() {
     let locs = serde_json::from_str(&fs::read_to_string("test/strings.json").unwrap()).unwrap();
     let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
     let desc = "string manipulation functions";
+    let prefix = "lib";
     let category = "strings";
 
     // TODO: move this to commonmark.rs
@@ -448,7 +457,7 @@ fn test_main() {
     )
     .expect("Failed to write header");
 
-    for entry in collect_entries(nix, category) {
+    for entry in collect_entries(nix, prefix, category) {
         entry
             .write_section(&locs, &mut output)
             .expect("Failed to write section")
@@ -464,11 +473,12 @@ fn test_description_of_lib_debug() {
     let mut output = Vec::new();
     let src = fs::read_to_string("test/lib-debug.nix").unwrap();
     let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
+    let prefix = "lib";
     let category = "debug";
     let desc = retrieve_description(&nix, &"Debug", category);
     writeln!(output, "{}", desc).expect("Failed to write header");
 
-    for entry in collect_entries(nix, category) {
+    for entry in collect_entries(nix, prefix, category) {
         entry
             .write_section(&Default::default(), &mut output)
             .expect("Failed to write section")
@@ -484,9 +494,10 @@ fn test_arg_formatting() {
     let mut output = Vec::new();
     let src = fs::read_to_string("test/arg-formatting.nix").unwrap();
     let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
+    let prefix = "lib";
     let category = "options";
 
-    for entry in collect_entries(nix, category) {
+    for entry in collect_entries(nix, prefix, category) {
         entry
             .write_section(&Default::default(), &mut output)
             .expect("Failed to write section")
@@ -502,9 +513,10 @@ fn test_inherited_exports() {
     let mut output = Vec::new();
     let src = fs::read_to_string("test/inherited-exports.nix").unwrap();
     let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
+    let prefix = "lib";
     let category = "let";
 
-    for entry in collect_entries(nix, category) {
+    for entry in collect_entries(nix, prefix, category) {
         entry
             .write_section(&Default::default(), &mut output)
             .expect("Failed to write section")
@@ -520,9 +532,10 @@ fn test_line_comments() {
     let mut output = Vec::new();
     let src = fs::read_to_string("test/line-comments.nix").unwrap();
     let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
+    let prefix = "lib";
     let category = "let";
 
-    for entry in collect_entries(nix, category) {
+    for entry in collect_entries(nix, prefix, category) {
         entry
             .write_section(&Default::default(), &mut output)
             .expect("Failed to write section")
@@ -538,9 +551,10 @@ fn test_multi_line() {
     let mut output = Vec::new();
     let src = fs::read_to_string("test/multi-line.nix").unwrap();
     let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
+    let prefix = "lib";
     let category = "let";
 
-    for entry in collect_entries(nix, category) {
+    for entry in collect_entries(nix, prefix, category) {
         entry
             .write_section(&Default::default(), &mut output)
             .expect("Failed to write section")
