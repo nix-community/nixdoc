@@ -102,6 +102,9 @@ fn handle_indentation(raw: &str) -> String {
 /// Represents a single manual section describing a library function.
 #[derive(Clone, Debug)]
 pub struct ManualEntry {
+    /// Prefix for the category (e.g. 'lib' or 'utils').
+    pub prefix: String,
+
     /// Name of the function category (e.g. 'strings', 'trivial', 'attrsets')
     pub category: String,
 
@@ -130,9 +133,10 @@ impl ManualEntry {
         locs: &HashMap<String, String>,
         writer: &mut W,
     ) -> Result<()> {
-        let title = format!("lib.{}.{}", self.category, self.name);
+        let title = format!("{}.{}.{}", self.prefix, self.category, self.name);
         let ident = format!(
-            "lib.{}.{}",
+            "{}.{}.{}",
+            self.prefix,
             self.category,
             self.name.replace('\'', "-prime")
         );
