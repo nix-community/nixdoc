@@ -29,7 +29,7 @@ use rnix::{
     SyntaxKind, SyntaxNode,
 };
 use rowan::{ast::AstNode, WalkEvent};
-use std::fs;
+use std::{fs, thread::scope};
 use textwrap::dedent;
 
 use std::collections::HashMap;
@@ -62,6 +62,10 @@ struct Options {
     /// Path to a file containing location data as JSON.
     #[arg(short, long)]
     locs: Option<PathBuf>,
+
+    /// Path to a file containing location data as JSON.
+    #[arg(long)]
+    dig: Vec<String>,
 }
 
 #[derive(Debug)]
@@ -74,6 +78,9 @@ struct DocComment {
 
     /// Usage example(s) (interpreted as a single code block)
     example: Option<String>,
+
+    /// Must be dug into
+    dig: bool,
 }
 
 #[derive(Debug)]
@@ -99,6 +106,14 @@ impl DocItem {
             example: self.comment.example,
             args: self.args,
         }
+    }
+    fn dig(&self) -> bool {
+        self.comment.dig
+    }
+    fn is_empty(&self) -> bool {
+        self.comment.doc.is_empty()
+            && self.comment.doc_type.is_none()
+            && self.comment.example.is_none()
     }
 }
 
@@ -239,6 +254,7 @@ fn parse_doc_comment(raw: &str) -> DocComment {
     let mut doc_str = String::new();
     let mut type_str = String::new();
     let mut example_str = String::new();
+    let mut dig = false;
 
     for line in raw.split_inclusive('\n') {
         let trimmed_line = line.trim();
@@ -250,6 +266,8 @@ fn parse_doc_comment(raw: &str) -> DocComment {
             state = ParseState::Example;
             example_str.push_str(suffix);
             example_str.push('\n');
+        } else if trimmed_line == "DocDig!" {
+            dig = true;
         } else {
             match state {
                 ParseState::Doc => doc_str.push_str(line),
@@ -263,6 +281,7 @@ fn parse_doc_comment(raw: &str) -> DocComment {
         doc: handle_indentation(&doc_str).unwrap_or(String::new()),
         doc_type: handle_indentation(&type_str),
         example: handle_indentation(&example_str),
+        dig,
     }
 }
 
@@ -316,7 +335,7 @@ fn collect_lambda_args(mut lambda: Lambda) -> Vec<Argument> {
 /// 2. The attached doc comment on the entry.
 /// 3. The argument names of any curried functions (pattern functions
 ///    not yet supported).
-fn collect_entry_information(entry: AttrpathValue) -> Option<DocItem> {
+fn collect_entry_information(entry: &AttrpathValue) -> Option<DocItem> {
     let doc_item = retrieve_doc_item(&entry)?;
 
     if let Some(Expr::Lambda(l)) = entry.value() {
@@ -329,6 +348,78 @@ fn collect_entry_information(entry: AttrpathValue) -> Option<DocItem> {
     }
 }
 
+fn dig_needed(node: &AttrpathValue, dig: &Vec<String>, chain: &str) -> bool {
+    let name = node.attrpath().unwrap().to_string();
+    let name = if chain.is_empty() {
+        name
+    } else {
+        String::from(chain) + "." + &name
+    };
+    dig.contains(&name)
+}
+
+fn build_scope(
+    node: &SyntaxNode,
+
+    prefix: &str,
+    category: &str,
+    scope: &HashMap<String, ManualEntry>,
+) -> HashMap<String, ManualEntry> {
+    let mut new_scope: HashMap<String, ManualEntry> = node
+        .children()
+        .filter_map(AttrpathValue::cast)
+        .filter_map(|e| collect_entry_information(&e))
+        .map(|di| (di.name.to_string(), di.into_entry(prefix, category)))
+        .collect();
+    for (key, val) in scope.iter() {
+        if !new_scope.contains_key(key) {
+            new_scope.insert(key.clone(), val.clone());
+        }
+    }
+    new_scope
+}
+
+fn collect_entries_ex(
+    node: &SyntaxNode,
+    prefix: &str,
+    category: &str,
+    scope: &HashMap<String, ManualEntry>,
+    dig: &Vec<String>,
+    chain: &str,
+) -> Vec<ManualEntry> {
+    // we will look into the top-level let and its body for function docs.
+    // we only need a single level of scope for this.
+    // since only the body can export a function we don't need to implement
+    // mutually recursive resolution.
+    for ev in node.preorder() {
+        match ev {
+            WalkEvent::Enter(n) if n.kind() == SyntaxKind::NODE_LET_IN => {
+                return collect_bindings(
+                    LetIn::cast(n.clone()).unwrap().body().unwrap().syntax(),
+                    prefix,
+                    category,
+                    &build_scope(&n, prefix, category, scope),
+                    dig,
+                    chain,
+                );
+            }
+            WalkEvent::Enter(n) if n.kind() == SyntaxKind::NODE_ATTR_SET => {
+                return collect_bindings(
+                    &n,
+                    prefix,
+                    category,
+                    &build_scope(&n, prefix, category, scope),
+                    dig,
+                    chain,
+                );
+            }
+            _ => (),
+        }
+    }
+
+    vec![]
+}
+
 // a binding is an assignment, which can take place in an attrset
 // - as attributes
 // - as inherits
@@ -336,7 +427,9 @@ fn collect_bindings(
     node: &SyntaxNode,
     prefix: &str,
     category: &str,
-    scope: HashMap<String, ManualEntry>,
+    scope: &HashMap<String, ManualEntry>,
+    dig: &Vec<String>,
+    chain: &str,
 ) -> Vec<ManualEntry> {
     for ev in node.preorder() {
         match ev {
@@ -344,8 +437,19 @@ fn collect_bindings(
                 let mut entries = vec![];
                 for child in n.children() {
                     if let Some(apv) = AttrpathValue::cast(child.clone()) {
+                        //println!("AttrpathValue {}", apv.attrpath().unwrap().to_string());
+
+                        let di = collect_entry_information(&apv);
+                        let digging = dig_needed(&apv, dig, chain)
+                            || di.as_ref().map_or(false, |di| di.dig());
+                        if digging {
+                            //println!("Dig needed!");
+                            entries.append(&mut collect_entries_ex(
+                                &child, prefix, category, scope, dig, chain,
+                            ));
+                        }
                         entries.extend(
-                            collect_entry_information(apv)
+                            di.filter(|di| !di.is_empty())
                                 .map(|di| di.into_entry(prefix, category)),
                         );
                     } else if let Some(inh) = Inherit::cast(child) {
@@ -373,33 +477,20 @@ fn collect_bindings(
 
 // Main entrypoint for collection
 // TODO: document
-fn collect_entries(root: rnix::Root, prefix: &str, category: &str) -> Vec<ManualEntry> {
-    // we will look into the top-level let and its body for function docs.
-    // we only need a single level of scope for this.
-    // since only the body can export a function we don't need to implement
-    // mutually recursive resolution.
-    for ev in root.syntax().preorder() {
-        match ev {
-            WalkEvent::Enter(n) if n.kind() == SyntaxKind::NODE_LET_IN => {
-                return collect_bindings(
-                    LetIn::cast(n.clone()).unwrap().body().unwrap().syntax(),
-                    prefix,
-                    category,
-                    n.children()
-                        .filter_map(AttrpathValue::cast)
-                        .filter_map(collect_entry_information)
-                        .map(|di| (di.name.to_string(), di.into_entry(prefix, category)))
-                        .collect(),
-                );
-            }
-            WalkEvent::Enter(n) if n.kind() == SyntaxKind::NODE_ATTR_SET => {
-                return collect_bindings(&n, prefix, category, Default::default());
-            }
-            _ => (),
-        }
-    }
-
-    vec![]
+fn collect_entries(
+    root: rnix::Root,
+    prefix: &str,
+    category: &str,
+    dig: &Vec<String>,
+) -> Vec<ManualEntry> {
+    collect_entries_ex(
+        root.syntax(),
+        prefix,
+        category,
+        &Default::default(),
+        dig,
+        "",
+    )
 }
 
 fn retrieve_description(nix: &rnix::Root, description: &str, category: &str) -> String {
@@ -432,7 +523,7 @@ fn main() {
     // TODO: move this to commonmark.rs
     writeln!(output, "{}", description).expect("Failed to write header");
 
-    for entry in collect_entries(nix, &opts.prefix, &opts.category) {
+    for entry in collect_entries(nix, &opts.prefix, &opts.category, &opts.dig) {
         entry
             .write_section(&locs, &mut output)
             .expect("Failed to write section")
@@ -448,6 +539,7 @@ fn test_main() {
     let desc = "string manipulation functions";
     let prefix = "lib";
     let category = "strings";
+    let dig = Vec::new();
 
     // TODO: move this to commonmark.rs
     writeln!(
@@ -457,7 +549,7 @@ fn test_main() {
     )
     .expect("Failed to write header");
 
-    for entry in collect_entries(nix, prefix, category) {
+    for entry in collect_entries(nix, prefix, category, &dig) {
         entry
             .write_section(&locs, &mut output)
             .expect("Failed to write section")
@@ -476,9 +568,10 @@ fn test_description_of_lib_debug() {
     let prefix = "lib";
     let category = "debug";
     let desc = retrieve_description(&nix, &"Debug", category);
+    let dig = Vec::new();
     writeln!(output, "{}", desc).expect("Failed to write header");
 
-    for entry in collect_entries(nix, prefix, category) {
+    for entry in collect_entries(nix, prefix, category, &dig) {
         entry
             .write_section(&Default::default(), &mut output)
             .expect("Failed to write section")
@@ -496,8 +589,9 @@ fn test_arg_formatting() {
     let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
     let prefix = "lib";
     let category = "options";
+    let dig = Vec::new();
 
-    for entry in collect_entries(nix, prefix, category) {
+    for entry in collect_entries(nix, prefix, category, &dig) {
         entry
             .write_section(&Default::default(), &mut output)
             .expect("Failed to write section")
@@ -515,8 +609,9 @@ fn test_inherited_exports() {
     let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
     let prefix = "lib";
     let category = "let";
+    let dig = Vec::new();
 
-    for entry in collect_entries(nix, prefix, category) {
+    for entry in collect_entries(nix, prefix, category, &dig) {
         entry
             .write_section(&Default::default(), &mut output)
             .expect("Failed to write section")
@@ -534,8 +629,9 @@ fn test_line_comments() {
     let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
     let prefix = "lib";
     let category = "let";
+    let dig = Vec::new();
 
-    for entry in collect_entries(nix, prefix, category) {
+    for entry in collect_entries(nix, prefix, category, &dig) {
         entry
             .write_section(&Default::default(), &mut output)
             .expect("Failed to write section")
@@ -553,8 +649,9 @@ fn test_multi_line() {
     let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
     let prefix = "lib";
     let category = "let";
+    let dig = Vec::new();
 
-    for entry in collect_entries(nix, prefix, category) {
+    for entry in collect_entries(nix, prefix, category, &dig) {
         entry
             .write_section(&Default::default(), &mut output)
             .expect("Failed to write section")
