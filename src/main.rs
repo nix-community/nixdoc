@@ -21,16 +21,25 @@
 //! * extract line number & add it to generated output
 //! * figure out how to specify examples (& leading whitespace?!)
 
+mod comment;
 mod commonmark;
+mod format;
+mod legacy;
+#[cfg(test)]
+mod test;
 
+use crate::{format::handle_indentation, legacy::retrieve_legacy_comment};
+
+use self::comment::get_expr_docs;
 use self::commonmark::*;
+use format::shift_headings;
+use legacy::collect_lambda_args;
 use rnix::{
-    ast::{AstToken, Attr, AttrpathValue, Comment, Expr, Inherit, Lambda, LetIn, Param},
+    ast::{Attr, AttrpathValue, Expr, Inherit, LetIn},
     SyntaxKind, SyntaxNode,
 };
 use rowan::{ast::AstNode, WalkEvent};
 use std::fs;
-use textwrap::dedent;
 
 use std::collections::HashMap;
 use std::io;
@@ -70,9 +79,11 @@ struct DocComment {
     doc: String,
 
     /// Optional type annotation for the thing being documented.
+    /// This is only available as legacy feature
     doc_type: Option<String>,
 
     /// Usage example(s) (interpreted as a single code block)
+    /// This is only available as legacy feature
     example: Option<String>,
 }
 
@@ -102,127 +113,61 @@ impl DocItem {
     }
 }
 
-/// Retrieve documentation comments.
-fn retrieve_doc_comment(node: &SyntaxNode, allow_line_comments: bool) -> Option<String> {
-    // if the current node has a doc comment it'll be immediately preceded by that comment,
-    // or there will be a whitespace token and *then* the comment tokens before it. We merge
-    // multiple line comments into one large comment if they are on adjacent lines for
-    // documentation simplicity.
-    let mut token = node.first_token()?.prev_token()?;
-    if token.kind() == SyntaxKind::TOKEN_WHITESPACE {
-        token = token.prev_token()?;
-    }
-    if token.kind() != SyntaxKind::TOKEN_COMMENT {
-        return None;
-    }
+pub fn retrieve_doc_comment(node: &SyntaxNode, shift_headings_by: Option<usize>) -> Option<String> {
+    // Return a rfc145 doc-comment if one is present
+    // Otherwise do the legacy parsing
+    // If there is a doc comment according to RFC145 just return it.
+    let doc_comment = match node.kind() {
+        // NODE_IDENT_PARAM: Special case, for backwards compatibility with function args
+        // In rfc145 this is equivalent with lookup of the lambda docs of the partial function.
+        // a: /** Doc comment */b:
+        // NODE_LAMBDA(b:) <- (parent of IDENT_PARAM)
+        //  NODE_IDENT_PARAM(b)
+        SyntaxKind::NODE_IDENT_PARAM => get_expr_docs(&node.parent().unwrap()),
+        _ => get_expr_docs(node),
+    };
 
-    // if we want to ignore line comments (eg because they may contain deprecation
-    // comments on attributes) we'll backtrack to the first preceding multiline comment.
-    while !allow_line_comments && token.text().starts_with('#') {
-        token = token.prev_token()?;
-        if token.kind() == SyntaxKind::TOKEN_WHITESPACE {
-            token = token.prev_token()?;
-        }
-        if token.kind() != SyntaxKind::TOKEN_COMMENT {
-            return None;
-        }
-    }
-
-    if token.text().starts_with("/*") {
-        return Some(Comment::cast(token)?.text().to_string());
-    }
-
-    // backtrack to the start of the doc comment, allowing only adjacent line comments.
-    // we don't care much about optimization here, doc comments aren't long enough for that.
-    if token.text().starts_with('#') {
-        let mut result = String::new();
-        while let Some(comment) = Comment::cast(token) {
-            if !comment.syntax().text().starts_with('#') {
-                break;
-            }
-            result.insert_str(0, comment.text().trim());
-            let ws = match comment.syntax().prev_token() {
-                Some(t) if t.kind() == SyntaxKind::TOKEN_WHITESPACE => t,
-                _ => break,
-            };
-            // only adjacent lines continue a doc comment, empty lines do not.
-            match ws.text().strip_prefix('\n') {
-                Some(trail) if !trail.contains('\n') => result.insert(0, ' '),
-                _ => break,
-            }
-            token = match ws.prev_token() {
-                Some(c) => c,
-                _ => break,
-            };
-        }
-        return Some(result);
-    }
-
-    None
+    doc_comment.map(|doc_comment| {
+        shift_headings(
+            &handle_indentation(&doc_comment).unwrap_or(String::new()),
+            // H1 to H4 can be used in the doc-comment with the current rendering.
+            // They will be shifted to H3, H6
+            // H1 and H2 are currently used by the outer rendering. (category and function name)
+            shift_headings_by.unwrap_or(2),
+        )
+    })
 }
 
 /// Transforms an AST node into a `DocItem` if it has a leading
 /// documentation comment.
 fn retrieve_doc_item(node: &AttrpathValue) -> Option<DocItem> {
-    let comment = retrieve_doc_comment(node.syntax(), false)?;
     let ident = node.attrpath().unwrap();
     // TODO this should join attrs() with '.' to handle whitespace, dynamic attrs and string
     // attrs. none of these happen in nixpkgs lib, and the latter two should probably be
     // rejected entirely.
     let item_name = ident.to_string();
 
-    Some(DocItem {
-        name: item_name,
-        comment: parse_doc_comment(&comment),
-        args: vec![],
-    })
-}
-
-/// Ensure all lines in a multi-line doc-comments have the same indentation.
-///
-/// Consider such a doc comment:
-///
-/// ```nix
-/// {
-///   /* foo is
-///   the value:
-///     10
-///   */
-///   foo = 10;
-/// }
-/// ```
-///
-/// The parser turns this into:
-///
-/// ```
-/// foo is
-///   the value:
-///     10
-/// ```
-///
-///
-/// where the first line has no leading indentation, and all other lines have preserved their
-/// original indentation.
-///
-/// What we want instead is:
-///
-/// ```
-/// foo is
-/// the value:
-///   10
-/// ```
-///
-/// i.e. we want the whole thing to be dedented. To achieve this, we remove all leading whitespace
-/// from the first line, and remove all common whitespace from the rest of the string.
-fn handle_indentation(raw: &str) -> Option<String> {
-    let result: String = match raw.split_once('\n') {
-        Some((first, rest)) => {
-            format!("{}\n{}", first.trim_start(), dedent(rest))
+    let doc_comment = retrieve_doc_comment(node.syntax(), Some(2));
+    match doc_comment {
+        Some(comment) => Some(DocItem {
+            name: item_name,
+            comment: DocComment {
+                doc: comment,
+                doc_type: None,
+                example: None,
+            },
+            args: vec![],
+        }),
+        // Fallback to legacy comment is there is no doc_comment
+        None => {
+            let comment = retrieve_legacy_comment(node.syntax(), false)?;
+            Some(DocItem {
+                name: item_name,
+                comment: parse_doc_comment(&comment),
+                args: vec![],
+            })
         }
-        None => raw.into(),
-    };
-
-    Some(result.trim().to_owned()).filter(|s| !s.is_empty())
+    }
 }
 
 /// Dumb, mutable, hacky doc comment "parser".
@@ -264,49 +209,6 @@ fn parse_doc_comment(raw: &str) -> DocComment {
         doc_type: handle_indentation(&type_str),
         example: handle_indentation(&example_str),
     }
-}
-
-/// Traverse a Nix lambda and collect the identifiers of arguments
-/// until an unexpected AST node is encountered.
-fn collect_lambda_args(mut lambda: Lambda) -> Vec<Argument> {
-    let mut args = vec![];
-
-    loop {
-        match lambda.param().unwrap() {
-            // a variable, e.g. `id = x: x`
-            Param::IdentParam(id) => {
-                args.push(Argument::Flat(SingleArg {
-                    name: id.to_string(),
-                    doc: handle_indentation(
-                        &retrieve_doc_comment(id.syntax(), true).unwrap_or_default(),
-                    ),
-                }));
-            }
-            // an attribute set, e.g. `foo = { a }: a`
-            Param::Pattern(pat) => {
-                // collect doc-comments for each attribute in the set
-                let pattern_vec: Vec<_> = pat
-                    .pat_entries()
-                    .map(|entry| SingleArg {
-                        name: entry.ident().unwrap().to_string(),
-                        doc: handle_indentation(
-                            &retrieve_doc_comment(entry.syntax(), true).unwrap_or_default(),
-                        ),
-                    })
-                    .collect();
-
-                args.push(Argument::Pattern(pattern_vec));
-            }
-        }
-
-        // Curried or not?
-        match lambda.body() {
-            Some(Expr::Lambda(inner)) => lambda = inner,
-            _ => break,
-        }
-    }
-
-    args
 }
 
 /// Traverse the arena from a top-level SetEntry and collect, where
@@ -409,8 +311,9 @@ fn retrieve_description(nix: &rnix::Root, description: &str, category: &str) -> 
         category,
         &nix.syntax()
             .first_child()
-            .and_then(|node| retrieve_doc_comment(&node, false))
-            .and_then(|comment| handle_indentation(&comment))
+            .and_then(|node| retrieve_doc_comment(&node, Some(1))
+                .or(retrieve_legacy_comment(&node, false)))
+            .and_then(|doc_item| handle_indentation(&doc_item))
             .unwrap_or_default()
     )
 }
@@ -437,130 +340,4 @@ fn main() {
             .write_section(&locs, &mut output)
             .expect("Failed to write section")
     }
-}
-
-#[test]
-fn test_main() {
-    let mut output = Vec::new();
-    let src = fs::read_to_string("test/strings.nix").unwrap();
-    let locs = serde_json::from_str(&fs::read_to_string("test/strings.json").unwrap()).unwrap();
-    let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
-    let desc = "string manipulation functions";
-    let prefix = "lib";
-    let category = "strings";
-
-    // TODO: move this to commonmark.rs
-    writeln!(
-        output,
-        "# {} {{#sec-functions-library-{}}}\n",
-        desc, category
-    )
-    .expect("Failed to write header");
-
-    for entry in collect_entries(nix, prefix, category) {
-        entry
-            .write_section(&locs, &mut output)
-            .expect("Failed to write section")
-    }
-
-    let output = String::from_utf8(output).expect("not utf8");
-
-    insta::assert_snapshot!(output);
-}
-
-#[test]
-fn test_description_of_lib_debug() {
-    let mut output = Vec::new();
-    let src = fs::read_to_string("test/lib-debug.nix").unwrap();
-    let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
-    let prefix = "lib";
-    let category = "debug";
-    let desc = retrieve_description(&nix, &"Debug", category);
-    writeln!(output, "{}", desc).expect("Failed to write header");
-
-    for entry in collect_entries(nix, prefix, category) {
-        entry
-            .write_section(&Default::default(), &mut output)
-            .expect("Failed to write section")
-    }
-
-    let output = String::from_utf8(output).expect("not utf8");
-
-    insta::assert_snapshot!(output);
-}
-
-#[test]
-fn test_arg_formatting() {
-    let mut output = Vec::new();
-    let src = fs::read_to_string("test/arg-formatting.nix").unwrap();
-    let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
-    let prefix = "lib";
-    let category = "options";
-
-    for entry in collect_entries(nix, prefix, category) {
-        entry
-            .write_section(&Default::default(), &mut output)
-            .expect("Failed to write section")
-    }
-
-    let output = String::from_utf8(output).expect("not utf8");
-
-    insta::assert_snapshot!(output);
-}
-
-#[test]
-fn test_inherited_exports() {
-    let mut output = Vec::new();
-    let src = fs::read_to_string("test/inherited-exports.nix").unwrap();
-    let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
-    let prefix = "lib";
-    let category = "let";
-
-    for entry in collect_entries(nix, prefix, category) {
-        entry
-            .write_section(&Default::default(), &mut output)
-            .expect("Failed to write section")
-    }
-
-    let output = String::from_utf8(output).expect("not utf8");
-
-    insta::assert_snapshot!(output);
-}
-
-#[test]
-fn test_line_comments() {
-    let mut output = Vec::new();
-    let src = fs::read_to_string("test/line-comments.nix").unwrap();
-    let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
-    let prefix = "lib";
-    let category = "let";
-
-    for entry in collect_entries(nix, prefix, category) {
-        entry
-            .write_section(&Default::default(), &mut output)
-            .expect("Failed to write section")
-    }
-
-    let output = String::from_utf8(output).expect("not utf8");
-
-    insta::assert_snapshot!(output);
-}
-
-#[test]
-fn test_multi_line() {
-    let mut output = Vec::new();
-    let src = fs::read_to_string("test/multi-line.nix").unwrap();
-    let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
-    let prefix = "lib";
-    let category = "let";
-
-    for entry in collect_entries(nix, prefix, category) {
-        entry
-            .write_section(&Default::default(), &mut output)
-            .expect("Failed to write section")
-    }
-
-    let output = String::from_utf8(output).expect("not utf8");
-
-    insta::assert_snapshot!(output);
 }

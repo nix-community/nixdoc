@@ -1,8 +1,26 @@
 # Changelog
 
+## Version 3.0.0
+
+### New Features
+
+- **Official Doc-Comments Support:** We've introduced support for official doc-comments as defined in [RFC145](https://github.com/NixOS/rfcs/pull/145). This enhancement aligns nixdoc with our latest documentation standard.
+
+### Deprecated Features
+
+- **Legacy Custom Format:** The custom nixdoc format is now considered a legacy feature. We plan to phase it out in future versions to streamline documentation practices.
+- We encourage users to transition to the official doc-comment format introduced in this release.
+- We will continue to maintain the legacy format, we will not accept new features or enhancements for it. This decision allows for a period of transition to the new documentation practices.
+
+See [Migration guide](./doc/migration.md) for smooth transition
+
+  by @hsjobeki; co-authored by @mightyiam
+
+  in https://github.com/nix-community/nixdoc/pull/91.
+
 ## 2.7.0
 
-- Added support to customise the attribute set prefix, which was previously hardcoded to `lib`.
+- Added support to customize the attribute set prefix, which was previously hardcoded to `lib`.
   The default is still `lib`, but you can pass `--prefix` now to use something else like `utils`.
 
   By @Janik-Haag in https://github.com/nix-community/nixdoc/pull/97
