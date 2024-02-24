@@ -23,11 +23,11 @@
   /**
   doc comment in markdown format
 
-  Example:
+  # Example (Should be a heading)
 
   This is just markdown
 
-  Type:
+  Type: (Should NOT be a heading)
 
   This is just markdown
   */
@@ -50,4 +50,12 @@
 
   }: 
   {};
+
+  # Omitting a doc comment from an attribute doesn't duplicate the previous one 
+  /** Comment */
+  foo = 0;
+
+  # This should not have any docs
+  bar = 1;
+  
 }

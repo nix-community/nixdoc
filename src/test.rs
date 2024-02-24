@@ -3,7 +3,7 @@ use std::fs;
 
 use std::io::Write;
 
-use crate::{collect_entries, retrieve_description};
+use crate::{collect_entries, format::shift_headings, retrieve_description};
 
 #[test]
 fn test_main() {
@@ -146,6 +146,16 @@ fn test_doc_comment() {
     }
 
     let output = String::from_utf8(output).expect("not utf8");
+
+    insta::assert_snapshot!(output);
+}
+
+#[test]
+fn test_headings() {
+    let mut output = String::new();
+    let src = fs::read_to_string("test/headings.md").unwrap();
+
+    output = shift_headings(&src, 2);
 
     insta::assert_snapshot!(output);
 }

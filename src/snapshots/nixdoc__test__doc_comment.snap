@@ -25,11 +25,11 @@ doc comment in markdown format
 
 doc comment in markdown format
 
-Example:
+### Example (Should be a heading)
 
 This is just markdown
 
-Type:
+Type: (Should NOT be a heading)
 
 This is just markdown
 
@@ -53,6 +53,11 @@ structured function argument
   `formal4`
 
   : official doc-comment variant
+
+
+## `lib.debug.foo` {#function-library-lib.debug.foo}
+
+Comment
 
 
 
