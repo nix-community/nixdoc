@@ -11,12 +11,12 @@ function set.
 ## Comment format
 
 This tool implements a subset of the doc-comment standard specified in [RFC-145/doc-comments](https://github.com/NixOS/rfcs/blob/master/rfcs/0145-doc-strings.md).
-But, it is currently limited to generating documentation for statically analyzable attribute paths only.
+But, it is currently limited to generating documentation for statically analysable attribute paths only.
 In the future, it could be the role of a Nix interpreter to obtain the values to be documented and their doc-comments.
 
 It is important to start doc-comments with the additional asterisk (`*`) -> `/**` which renders as a doc-comment.
 
-The content of the doc-comment should be some markdown. ( See [Commonmark](https://spec.commonmark.org/0.30/) specification)
+The content of the doc-comment should conform to the [Commonmark](https://spec.commonmark.org/0.30/) specification.
 
 ### Example
 

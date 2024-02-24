@@ -49,13 +49,13 @@ pub fn handle_indentation(raw: &str) -> Option<String> {
 
 /// Shift down markdown headings
 ///
-/// Performs a line-wise matching to ' # Heading '
+/// Performs a line-wise matching to '# Heading '
 ///
 /// Counts the current numbers of '#' and adds levels: [usize] to them
 /// levels := 1; gives
 /// '# Heading' -> '## Heading'
 ///
-/// Markdown has 6 levels of headings. Everything beyond that (e.g., H7) may produce unexpected renderings.
+/// Commonmark markdown has 6 levels of headings. Everything beyond that (e.g., H7) is not supported and may produce unexpected renderings.
 /// by default this function makes sure, headings don't exceed the H6 boundary.
 /// levels := 2;
 /// ...
@@ -78,15 +78,15 @@ pub fn shift_headings(raw: &str, levels: usize) -> String {
 pub fn handle_heading(line: &str, levels: usize) -> String {
     let chars = line.chars();
 
-    let mut leading_trivials: String = String::new();
+    // let mut leading_trivials: String = String::new();
     let mut hashes = String::new();
     let mut rest = String::new();
     for char in chars {
         match char {
-            ' ' | '\t' if hashes.is_empty() => {
-                // only collect trivial before the initial hash
-                leading_trivials.push(char)
-            }
+            // ' ' | '\t' if hashes.is_empty() => {
+            //     // only collect trivial before the initial hash
+            //     leading_trivials.push(char)
+            // }
             '#' if rest.is_empty() => {
                 // only collect hashes if no other tokens
                 hashes.push(char)
@@ -100,5 +100,5 @@ pub fn handle_heading(line: &str, levels: usize) -> String {
         _ => "#".repeat(hashes.len() + levels),
     };
 
-    format!("{leading_trivials}{new_hashes} {rest}")
+    format!("{new_hashes}{rest}")
 }

@@ -74,7 +74,8 @@ The approach to documenting single arguments has evolved. Instead of individual 
   
   # Arguments
   
-  - **x**: The value to be returned.
+  `x` (Any)
+  : The value to be returned.
   
   */
   id = x: x;
@@ -105,7 +106,7 @@ Structured arguments can be documented (described in RFC145 as 'lambda formals')
 ```nix
 {
   /**
-  * The `add` function calculates the sum of `a` and `b`.
+  The `add` function calculates the sum of `a` and `b`.
   */
   add = { 
       /** The first number to add. */

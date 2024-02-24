@@ -113,20 +113,10 @@ impl DocItem {
     }
 }
 
+/// Returns a rfc145 doc-comment if one is present
 pub fn retrieve_doc_comment(node: &SyntaxNode, shift_headings_by: Option<usize>) -> Option<String> {
-    // Return a rfc145 doc-comment if one is present
-    // Otherwise do the legacy parsing
-    // If there is a doc comment according to RFC145 just return it.
-    let doc_comment = match node.kind() {
-        // NODE_IDENT_PARAM: Special case, for backwards compatibility with function args
-        // In rfc145 this is equivalent with lookup of the lambda docs of the partial function.
-        // a: /** Doc comment */b:
-        // NODE_LAMBDA(b:) <- (parent of IDENT_PARAM)
-        //  NODE_IDENT_PARAM(b)
-        SyntaxKind::NODE_IDENT_PARAM => get_expr_docs(&node.parent().unwrap()),
-        _ => get_expr_docs(node),
-    };
-
+    let doc_comment = get_expr_docs(node);
+        
     doc_comment.map(|doc_comment| {
         shift_headings(
             &handle_indentation(&doc_comment).unwrap_or(String::new()),
