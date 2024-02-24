@@ -50,8 +50,12 @@ filterAttrs =
   ```
   
   # Arguments
-  - **pred**: Predicate taking an attribute name and an attribute value, which returns `true` to include the attribute, or `false` to exclude the attribute.
-  - **set**: The attribute set to filter
+
+  **pred**
+  : Predicate taking an attribute name and an attribute value, which returns `true` to include the attribute, or `false` to exclude the attribute.
+  
+  **set**
+  : The attribute set to filter
 */
 filterAttrs =
   pred:
@@ -66,6 +70,8 @@ With the introduction of RFC145, there is a shift in how arguments are documente
 **Example:** Migrating **Single Argument Documentation**
 
 The approach to documenting single arguments has evolved. Instead of individual argument comments, document the function and its arguments together.
+
+> Note: Within nixpkgs the convention of using [definition-lists](https://www.markdownguide.org/extended-syntax/#definition-lists) for documenting arguments has been established.
 
 ```nix
 {

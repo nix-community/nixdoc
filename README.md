@@ -47,13 +47,19 @@ The following is an example of markdown documentation for new and current users 
 
     # Arguments
 
-    - a: The first number
-    - b: The second number
+    a
+    : The first number
+    
+    b
+    : The second number
     
   */
   add = a: b: a + b;
 }
 ````
+
+> Note: Within nixpkgs the convention of using [definition-lists](https://www.markdownguide.org/extended-syntax/#definition-lists) for documenting arguments has been established.
+
 
 ## Custom nixdoc format (Legacy)
 
