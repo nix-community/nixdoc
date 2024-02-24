@@ -64,11 +64,11 @@ pub fn handle_indentation(raw: &str) -> Option<String> {
 ///
 pub fn shift_headings(raw: &str, levels: usize) -> String {
     let mut result = String::new();
-    for line in raw.lines() {
+    for line in raw.split_inclusive('\n') {
         if line.trim_start().starts_with('#') {
-            result.push_str(&format!("{}\n", &handle_heading(line, levels)));
+            result.push_str(&handle_heading(line, levels));
         } else {
-            result.push_str(&format!("{line}\n"));
+            result.push_str(line);
         }
     }
     result
@@ -83,10 +83,6 @@ pub fn handle_heading(line: &str, levels: usize) -> String {
     let mut rest = String::new();
     for char in chars {
         match char {
-            // ' ' | '\t' if hashes.is_empty() => {
-            //     // only collect trivial before the initial hash
-            //     leading_trivials.push(char)
-            // }
             '#' if rest.is_empty() => {
                 // only collect hashes if no other tokens
                 hashes.push(char)

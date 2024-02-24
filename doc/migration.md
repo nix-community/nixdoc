@@ -97,8 +97,7 @@ If arguments require more complex documentation consider starting an extra secti
   
   # Arguments
   
-  ## **x**
-  
+  ## **x** (Any)
   (...Some comprehensive documentation)
 
   */

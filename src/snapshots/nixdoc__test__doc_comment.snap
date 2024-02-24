@@ -20,7 +20,6 @@ This is a parsed example
 
 doc comment in markdown format
 
-
 ## `lib.debug.argumentTest` {#function-library-lib.debug.argumentTest}
 
 doc comment in markdown format
@@ -32,7 +31,6 @@ This is just markdown
 Type: (Should NOT be a heading)
 
 This is just markdown
-
 
 structured function argument
 
@@ -58,6 +56,5 @@ structured function argument
 ## `lib.debug.foo` {#function-library-lib.debug.foo}
 
 Comment
-
 
 
