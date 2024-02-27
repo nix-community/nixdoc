@@ -10,19 +10,78 @@ function set.
 
 ## Comment format
 
-Currently, identifiers are included in the documentation if they have
-a preceding comment in multiline syntax `/* something */`.
+This tool implements a subset of the doc-comment standard specified in [RFC-145/doc-comments](https://github.com/NixOS/rfcs/blob/master/rfcs/0145-doc-strings.md).
+But, it is currently limited to generating documentation for statically analysable attribute paths only.
+In the future, it could be the role of a Nix interpreter to obtain the values to be documented and their doc-comments.
 
-Two special line beginnings are recognised:
+It is important to start doc-comments with the additional asterisk (`*`) -> `/**` which renders as a doc-comment.
+
+The content of the doc-comment should conform to the [Commonmark](https://spec.commonmark.org/0.30/) specification.
+
+### Example
+
+The following is an example of markdown documentation for new and current users of nixdoc.
+
+> Sidenote: Indentation is automatically detected and should be consistent across the content. 
+> 
+> If you are used to multiline-strings (`''`) in nix this should be intuitive to follow.
+
+````nix
+{
+  /** 
+    This function adds two numbers
+
+    # Example
+
+    ```nix
+    add 4 5
+    =>
+    9
+    ```
+
+    # Type
+
+    ```
+    add :: Number -> Number -> Number
+    ```
+
+    # Arguments
+
+    a
+    : The first number
+    
+    b
+    : The second number
+    
+  */
+  add = a: b: a + b;
+}
+````
+
+> Note: Within nixpkgs the convention of using [definition-lists](https://www.markdownguide.org/extended-syntax/#definition-lists) for documenting arguments has been established.
+
+
+## Custom nixdoc format (Legacy)
+
+You should consider migrating to the newer format described above.
+
+See [Migration guide](./doc/migration.md).
+
+### Comment format (legacy)
+
+Identifiers are included in the documentation if they have
+a preceding comment in multiline syntax `/* something */`. You should consider migrating to the new format described above.
+
+Two special line beginnings are recognized:
 
 * `Example:` Everything following this line will be assumed to be a
   verbatim usage example.
-* `Type:` This line will be interpreted as a faux type signature.
+* `Type:` This line will be interpreted as a faux-type signature.
 
 These will result in appropriate elements being inserted into the
 output.
 
-## Function arguments
+### Function arguments (legacy)
 
 Function arguments can be documented by prefixing them with a comment:
 
