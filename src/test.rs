@@ -152,10 +152,9 @@ fn test_doc_comment() {
 
 #[test]
 fn test_headings() {
-    let mut output = String::new();
     let src = fs::read_to_string("test/headings.md").unwrap();
 
-    output = shift_headings(&src, 2);
+    let output = shift_headings(&src, 2);
 
     insta::assert_snapshot!(output);
 }
