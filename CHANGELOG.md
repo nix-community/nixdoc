@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 3.0.0
+## Version 3.0.1
 
 ### New Features
 
@@ -17,6 +17,10 @@ See [Migration guide](./doc/migration.md) for smooth transition
   by @hsjobeki; co-authored by @mightyiam
 
   in https://github.com/nix-community/nixdoc/pull/91.
+
+## Version 3.0.0
+
+Removed due to invalid lock file.
 
 ## 2.7.0
 
