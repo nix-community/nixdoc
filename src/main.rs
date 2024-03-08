@@ -33,7 +33,7 @@ use crate::{format::handle_indentation, legacy::retrieve_legacy_comment};
 use self::comment::get_expr_docs;
 use self::commonmark::*;
 use format::shift_headings;
-use legacy::collect_lambda_args;
+use legacy::{collect_lambda_args_legacy, LegacyDocItem};
 use rnix::{
     ast::{Attr, AttrpathValue, Expr, Inherit, LetIn},
     SyntaxKind, SyntaxNode,
@@ -91,26 +91,11 @@ struct DocComment {
 struct DocItem {
     name: String,
     comment: DocComment,
-    args: Vec<Argument>,
 }
 
-impl DocItem {
-    fn into_entry(self, prefix: &str, category: &str) -> ManualEntry {
-        ManualEntry {
-            prefix: prefix.to_string(),
-            category: category.to_string(),
-            name: self.name,
-            description: self
-                .comment
-                .doc
-                .split("\n\n")
-                .map(|s| s.to_string())
-                .collect(),
-            fn_type: self.comment.doc_type,
-            example: self.comment.example,
-            args: self.args,
-        }
-    }
+enum DocItemOrLegacy {
+    LegacyDocItem(LegacyDocItem),
+    DocItem(DocItem),
 }
 
 /// Returns a rfc145 doc-comment if one is present
@@ -130,7 +115,7 @@ pub fn retrieve_doc_comment(node: &SyntaxNode, shift_headings_by: Option<usize>)
 
 /// Transforms an AST node into a `DocItem` if it has a leading
 /// documentation comment.
-fn retrieve_doc_item(node: &AttrpathValue) -> Option<DocItem> {
+fn retrieve_doc_item(node: &AttrpathValue) -> Option<DocItemOrLegacy> {
     let ident = node.attrpath().unwrap();
     // TODO this should join attrs() with '.' to handle whitespace, dynamic attrs and string
     // attrs. none of these happen in nixpkgs lib, and the latter two should probably be
@@ -139,23 +124,22 @@ fn retrieve_doc_item(node: &AttrpathValue) -> Option<DocItem> {
 
     let doc_comment = retrieve_doc_comment(node.syntax(), Some(2));
     match doc_comment {
-        Some(comment) => Some(DocItem {
+        Some(comment) => Some(DocItemOrLegacy::DocItem(DocItem {
             name: item_name,
             comment: DocComment {
                 doc: comment,
                 doc_type: None,
                 example: None,
             },
-            args: vec![],
-        }),
+        })),
         // Fallback to legacy comment is there is no doc_comment
         None => {
             let comment = retrieve_legacy_comment(node.syntax(), false)?;
-            Some(DocItem {
+            Some(DocItemOrLegacy::LegacyDocItem(LegacyDocItem {
                 name: item_name,
                 comment: parse_doc_comment(&comment),
                 args: vec![],
-            })
+            }))
         }
     }
 }
@@ -208,16 +192,26 @@ fn parse_doc_comment(raw: &str) -> DocComment {
 /// 2. The attached doc comment on the entry.
 /// 3. The argument names of any curried functions (pattern functions
 ///    not yet supported).
-fn collect_entry_information(entry: AttrpathValue) -> Option<DocItem> {
+fn collect_entry_information(entry: AttrpathValue) -> Option<LegacyDocItem> {
     let doc_item = retrieve_doc_item(&entry)?;
 
-    if let Some(Expr::Lambda(l)) = entry.value() {
-        Some(DocItem {
-            args: collect_lambda_args(l),
-            ..doc_item
-        })
-    } else {
-        Some(doc_item)
+    match doc_item {
+        DocItemOrLegacy::LegacyDocItem(v) => {
+            if let Some(Expr::Lambda(l)) = entry.value() {
+                Some(LegacyDocItem {
+                    args: collect_lambda_args_legacy(l),
+                    ..v
+                })
+            } else {
+                Some(v)
+            }
+        }
+        // Convert DocItems into legacyItem for markdown rendering
+        DocItemOrLegacy::DocItem(v) => Some(LegacyDocItem {
+            args: vec![],
+            name: v.name,
+            comment: v.comment,
+        }),
     }
 }
 

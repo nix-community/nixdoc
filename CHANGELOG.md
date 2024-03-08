@@ -1,5 +1,13 @@
 # Changelog
 
+## Version 3.0.2
+
+Avoid displaying arguments when a doc-comment is already in place.
+
+by @hsjobeki;
+
+in https://github.com/nix-community/nixdoc/pull/109.
+
 ## Version 3.0.1
 
 ### New Features

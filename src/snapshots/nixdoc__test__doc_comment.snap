@@ -20,41 +20,6 @@ This is a parsed example
 
 doc comment in markdown format
 
-## `lib.debug.argumentTest` {#function-library-lib.debug.argumentTest}
-
-doc comment in markdown format
-
-### Example (Should be a heading)
-
-This is just markdown
-
-Type: (Should NOT be a heading)
-
-This is just markdown
-
-structured function argument
-
-: `formal1`
-
-  : Legacy line comment
-
-  `formal2`
-
-  : Legacy Block
-
-  `formal3`
-
-  : Legacy 
-    multiline
-    comment
-
-  `formal4`
-
-  : official doc-comment variant
-
-
 ## `lib.debug.foo` {#function-library-lib.debug.foo}
 
 Comment
-
-
