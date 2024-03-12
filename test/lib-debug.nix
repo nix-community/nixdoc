@@ -26,9 +26,6 @@ let
     id
     mapAttrs
     trace;
-in
-
-rec {
 
   # -- TRACING --
 
@@ -94,6 +91,21 @@ rec {
     # The value to return
     y: trace (builtins.deepSeq x x) y;
 
+
+  # Helpers for traceSeqN
+  snip = v:
+    if      isList  v then noQuotes "[…]" v
+    else if isAttrs v then noQuotes "{…}" v
+    else v;
+
+  noQuotes = str: v: { __pretty = const str; val = v; };
+
+  modify = n: fn: v:
+    if (n == 0) then fn v
+    else if isList  v then map (modify (n - 1) fn) v
+    else if isAttrs v then mapAttrs (const (modify (n - 1) fn)) v
+    else v;
+
   /* Like `traceSeq`, but only evaluate down to depth n.
      This is very useful because lots of `traceSeq` usages
      lead to an infinite recursion.
@@ -106,17 +118,7 @@ rec {
      Type: traceSeqN :: Int -> a -> b -> b
    */
   traceSeqN = depth: x: y:
-    let snip = v: if      isList  v then noQuotes "[…]" v
-                  else if isAttrs v then noQuotes "{…}" v
-                  else v;
-        noQuotes = str: v: { __pretty = const str; val = v; };
-        modify = n: fn: v: if (n == 0) then fn v
-                      else if isList  v then map (modify (n - 1) fn) v
-                      else if isAttrs v then mapAttrs
-                        (const (modify (n - 1) fn)) v
-                      else v;
-    in trace (generators.toPretty { allowPrettyValues = true; }
-               (modify depth snip x)) y;
+    trace (generators.toPretty { allowPrettyValues = true; } (modify depth snip x)) y;
 
   /* A combination of `traceVal` and `traceSeq` that applies a
      provided function to the value to be traced after `deepSeq`ing
@@ -243,4 +245,24 @@ rec {
        { testX = allTrue [ true ]; }
   */
   testAllTrue = expr: { inherit expr; expected = map (x: true) expr; };
+
+in
+
+# This is the public interface of the file. The order of the entries in the inherit list is the
+# order in which they will be documented by `nixdoc`.
+{
+  inherit
+    traceIf
+    traceValFn
+    traceVal
+    traceSeq
+    traceSeqN
+    traceValSeqFn
+    traceValSeq
+    traceValSeqNFn
+    traceValSeqN
+    traceFnSeqN
+    runTests
+    testAllTrue
+    ;
 }
