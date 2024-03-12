@@ -5,10 +5,36 @@ use rnix::{
 use rowan::ast::AstNode;
 
 use crate::{
-    commonmark::{Argument, SingleArg},
+    commonmark::{Argument, ManualEntry, SingleArg},
     format::handle_indentation,
-    retrieve_doc_comment,
+    retrieve_doc_comment, DocComment,
 };
+
+#[derive(Debug)]
+pub struct LegacyDocItem {
+    pub name: String,
+    pub comment: DocComment,
+    pub args: Vec<Argument>,
+}
+
+impl LegacyDocItem {
+    pub fn into_entry(self, prefix: &str, category: &str) -> ManualEntry {
+        ManualEntry {
+            prefix: prefix.to_string(),
+            category: category.to_string(),
+            name: self.name,
+            description: self
+                .comment
+                .doc
+                .split("\n\n")
+                .map(|s| s.to_string())
+                .collect(),
+            fn_type: self.comment.doc_type,
+            example: self.comment.example,
+            args: self.args,
+        }
+    }
+}
 
 /// Retrieve documentation comments.
 pub fn retrieve_legacy_comment(node: &SyntaxNode, allow_line_comments: bool) -> Option<String> {
@@ -70,7 +96,7 @@ pub fn retrieve_legacy_comment(node: &SyntaxNode, allow_line_comments: bool) -> 
 
 /// Traverse directly chained nix lambdas and collect the identifiers of all lambda arguments
 /// until an unexpected AST node is encountered.
-pub fn collect_lambda_args(mut lambda: Lambda) -> Vec<Argument> {
+pub fn collect_lambda_args_legacy(mut lambda: Lambda) -> Vec<Argument> {
     let mut args = vec![];
 
     loop {
@@ -87,7 +113,7 @@ pub fn collect_lambda_args(mut lambda: Lambda) -> Vec<Argument> {
             }
             // an ident in a pattern, e.g. `a` in `foo = { a }: a`
             Param::Pattern(pat) => {
-                // collect doc-comments for each lambda formal
+                // collect doc-comments for each lambda formal too
                 // Lambda formals are supported by RFC145
                 let pattern_vec: Vec<_> = pat
                     .pat_entries()

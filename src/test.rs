@@ -179,3 +179,24 @@ fn test_doc_comment_section_description() {
 
     insta::assert_snapshot!(output);
 }
+
+#[test]
+fn test_doc_comment_no_duplicate_arguments() {
+    let mut output = Vec::new();
+    let src = fs::read_to_string("test/doc-comment-arguments.nix").unwrap();
+    let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
+    let prefix = "lib";
+    let category = "debug";
+    let desc = retrieve_description(&nix, &"Debug", category);
+    writeln!(output, "{}", desc).expect("Failed to write header");
+
+    for entry in collect_entries(nix, prefix, category) {
+        entry
+            .write_section(&Default::default(), &mut output)
+            .expect("Failed to write section")
+    }
+
+    let output = String::from_utf8(output).expect("not utf8");
+
+    insta::assert_snapshot!(output);
+}

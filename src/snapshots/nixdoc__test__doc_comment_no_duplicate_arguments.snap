@@ -1,0 +1,53 @@
+---
+source: src/test.rs
+expression: output
+---
+# Debug {#sec-functions-library-debug}
+
+
+## `lib.debug.old` {#function-library-lib.debug.old}
+
+nixdoc comment
+
+`arg`
+
+: Should be visible
+
+
+## `lib.debug.omited` {#function-library-lib.debug.omited}
+
+Doc-comment
+
+## `lib.debug.multiple` {#function-library-lib.debug.multiple}
+
+Doc-comment
+
+## `lib.debug.argumentTest` {#function-library-lib.debug.argumentTest}
+
+Doc-comment before the lamdba causes the whole 
+lambda including its arguments to switch to doc-comments ONLY rendering
+
+## `lib.debug.legacyArgumentTest` {#function-library-lib.debug.legacyArgumentTest}
+
+Legacy comments allow to use any 
+form of comments for the lambda arguments/formals
+
+structured function argument
+
+: `formal1`
+
+  : Legacy line comment
+
+  `formal2`
+
+  : Legacy Block
+
+  `formal3`
+
+  : Legacy 
+    multiline
+    comment
+
+  `formal4`
+
+  : doc-comment style

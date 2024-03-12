@@ -20,37 +20,6 @@
   */
   rfc-style = {};
 
-  /**
-  doc comment in markdown format
-
-  # Example (Should be a heading)
-
-  This is just markdown
-
-  Type: (Should NOT be a heading)
-
-  This is just markdown
-  */
-  argumentTest = {
-    # Legacy line comment
-    formal1,
-    # Legacy 
-    # Block
-    formal2,
-    /*
-    Legacy 
-    multiline
-    comment
-    */
-    formal3,
-    /**
-    official doc-comment variant
-    */
-    formal4,
-
-  }: 
-  {};
-
   # Omitting a doc comment from an attribute doesn't duplicate the previous one 
   /** Comment */
   foo = 0;
