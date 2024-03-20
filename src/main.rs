@@ -41,7 +41,7 @@ use rnix::{
     SyntaxKind, SyntaxNode,
 };
 use rowan::{ast::AstNode, WalkEvent};
-use std::fs;
+use std::{fs, path::Path};
 
 use std::collections::HashMap;
 use std::io;
@@ -101,13 +101,15 @@ enum DocItemOrLegacy {
 }
 
 /// Returns a rfc145 doc-comment if one is present
-pub fn retrieve_doc_comment(node: &SyntaxNode, shift_headings_by: Option<usize>) -> Option<String> {
+pub fn retrieve_doc_comment(
+    node: &SyntaxNode,
+    shift_headings_by: Option<usize>,
+    file: &Path,
+) -> Option<String> {
     let doc_comment = get_expr_docs(node);
 
-    let opts = Options::parse();
-
     // Doc comments can import external file via "import" in frontmatter
-    let content = get_imported_content(&opts.file, doc_comment.as_ref()).or(doc_comment);
+    let content = get_imported_content(file, doc_comment.as_ref()).or(doc_comment);
 
     content.map(|inner| {
         shift_headings(
@@ -122,14 +124,14 @@ pub fn retrieve_doc_comment(node: &SyntaxNode, shift_headings_by: Option<usize>)
 
 /// Transforms an AST node into a `DocItem` if it has a leading
 /// documentation comment.
-fn retrieve_doc_item(node: &AttrpathValue) -> Option<DocItemOrLegacy> {
+fn retrieve_doc_item(node: &AttrpathValue, file_path: &Path) -> Option<DocItemOrLegacy> {
     let ident = node.attrpath().unwrap();
     // TODO this should join attrs() with '.' to handle whitespace, dynamic attrs and string
     // attrs. none of these happen in nixpkgs lib, and the latter two should probably be
     // rejected entirely.
     let item_name = ident.to_string();
 
-    let doc_comment = retrieve_doc_comment(node.syntax(), Some(2));
+    let doc_comment = retrieve_doc_comment(node.syntax(), Some(2), file_path);
     match doc_comment {
         Some(comment) => Some(DocItemOrLegacy::DocItem(DocItem {
             name: item_name,
@@ -199,14 +201,14 @@ fn parse_doc_comment(raw: &str) -> DocComment {
 /// 2. The attached doc comment on the entry.
 /// 3. The argument names of any curried functions (pattern functions
 ///    not yet supported).
-fn collect_entry_information(entry: AttrpathValue) -> Option<LegacyDocItem> {
-    let doc_item = retrieve_doc_item(&entry)?;
+fn collect_entry_information(entry: AttrpathValue, file_path: &Path) -> Option<LegacyDocItem> {
+    let doc_item = retrieve_doc_item(&entry, file_path)?;
 
     match doc_item {
         DocItemOrLegacy::LegacyDocItem(v) => {
             if let Some(Expr::Lambda(l)) = entry.value() {
                 Some(LegacyDocItem {
-                    args: collect_lambda_args_legacy(l),
+                    args: collect_lambda_args_legacy(l, file_path),
                     ..v
                 })
             } else {
@@ -230,6 +232,7 @@ fn collect_bindings(
     prefix: &str,
     category: &str,
     scope: HashMap<String, ManualEntry>,
+    file_path: &Path,
 ) -> Vec<ManualEntry> {
     for ev in node.preorder() {
         match ev {
@@ -238,7 +241,7 @@ fn collect_bindings(
                 for child in n.children() {
                     if let Some(apv) = AttrpathValue::cast(child.clone()) {
                         entries.extend(
-                            collect_entry_information(apv)
+                            collect_entry_information(apv, file_path)
                                 .map(|di| di.into_entry(prefix, category)),
                         );
                     } else if let Some(inh) = Inherit::cast(child) {
@@ -266,7 +269,12 @@ fn collect_bindings(
 
 // Main entrypoint for collection
 // TODO: document
-fn collect_entries(root: rnix::Root, prefix: &str, category: &str) -> Vec<ManualEntry> {
+fn collect_entries(
+    root: rnix::Root,
+    prefix: &str,
+    category: &str,
+    file_path: &Path,
+) -> Vec<ManualEntry> {
     // we will look into the top-level let and its body for function docs.
     // we only need a single level of scope for this.
     // since only the body can export a function we don't need to implement
@@ -280,13 +288,14 @@ fn collect_entries(root: rnix::Root, prefix: &str, category: &str) -> Vec<Manual
                     category,
                     n.children()
                         .filter_map(AttrpathValue::cast)
-                        .filter_map(collect_entry_information)
+                        .filter_map(|v| collect_entry_information(v, file_path))
                         .map(|di| (di.name.to_string(), di.into_entry(prefix, category)))
                         .collect(),
+                    file_path,
                 );
             }
             WalkEvent::Enter(n) if n.kind() == SyntaxKind::NODE_ATTR_SET => {
-                return collect_bindings(&n, prefix, category, Default::default());
+                return collect_bindings(&n, prefix, category, Default::default(), file_path);
             }
             _ => (),
         }
@@ -295,14 +304,19 @@ fn collect_entries(root: rnix::Root, prefix: &str, category: &str) -> Vec<Manual
     vec![]
 }
 
-fn retrieve_description(nix: &rnix::Root, description: &str, category: &str) -> String {
+fn retrieve_description(
+    nix: &rnix::Root,
+    description: &str,
+    category: &str,
+    file: &Path,
+) -> String {
     format!(
         "# {} {{#sec-functions-library-{}}}\n{}\n",
         description,
         category,
         &nix.syntax()
             .first_child()
-            .and_then(|node| retrieve_doc_comment(&node, Some(1))
+            .and_then(|node| retrieve_doc_comment(&node, Some(1), file)
                 .or(retrieve_legacy_comment(&node, false)))
             .and_then(|doc_item| handle_indentation(&doc_item))
             .unwrap_or_default()
@@ -321,12 +335,12 @@ fn main() {
             .expect("could not read location information"),
     };
     let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
-    let description = retrieve_description(&nix, &opts.description, &opts.category);
+    let description = retrieve_description(&nix, &opts.description, &opts.category, &opts.file);
 
     // TODO: move this to commonmark.rs
     writeln!(output, "{}", description).expect("Failed to write header");
 
-    for entry in collect_entries(nix, &opts.prefix, &opts.category) {
+    for entry in collect_entries(nix, &opts.prefix, &opts.category, &opts.file) {
         entry
             .write_section(&locs, &mut output)
             .expect("Failed to write section")

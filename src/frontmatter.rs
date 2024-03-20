@@ -1,11 +1,16 @@
-use std::{collections::HashMap, fs, path::PathBuf, process::Command};
+use std::{
+    collections::HashMap,
+    fs,
+    path::{Path, PathBuf},
+    process::Command,
+};
 
 use serde::{Deserialize, Serialize};
-use yaml_front_matter::{Document, YamlFrontMatter};
+use yaml_front_matter::YamlFrontMatter;
 
 fn find_repo_root() -> Option<PathBuf> {
     let output = Command::new("git")
-        .args(&["rev-parse", "--show-toplevel"])
+        .args(["rev-parse", "--show-toplevel"])
         .output()
         .ok()?
         .stdout;
@@ -21,12 +26,10 @@ pub struct Matter {
 }
 
 /// Returns the actual content of a markdown file, if the frontmatter has an import field.
-pub fn get_imported_content(file_path: &PathBuf, markdown: Option<&String>) -> Option<String> {
-    if markdown.is_none() {
-        return None;
-    }
+pub fn get_imported_content(file_path: &Path, markdown: Option<&String>) -> Option<String> {
+    markdown?;
 
-    match YamlFrontMatter::parse::<Matter>(&markdown.unwrap()) {
+    match YamlFrontMatter::parse::<Matter>(markdown.unwrap()) {
         Ok(document) => {
             let metadata = document.metadata.content;
 
@@ -53,8 +56,6 @@ pub fn get_imported_content(file_path: &PathBuf, markdown: Option<&String>) -> O
                     .expect(format!("Could not read file: {:?}", &path).as_str())
             })
         }
-        Err(e) => {
-            return None;
-        }
+        Err(_) => None,
     }
 }

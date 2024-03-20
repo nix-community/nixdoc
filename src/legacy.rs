@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use rnix::{
     ast::{AstToken, Comment, Expr, Lambda, Param},
     SyntaxKind, SyntaxNode,
@@ -96,7 +98,7 @@ pub fn retrieve_legacy_comment(node: &SyntaxNode, allow_line_comments: bool) -> 
 
 /// Traverse directly chained nix lambdas and collect the identifiers of all lambda arguments
 /// until an unexpected AST node is encountered.
-pub fn collect_lambda_args_legacy(mut lambda: Lambda) -> Vec<Argument> {
+pub fn collect_lambda_args_legacy(mut lambda: Lambda, file_path: &Path) -> Vec<Argument> {
     let mut args = vec![];
 
     loop {
@@ -120,7 +122,7 @@ pub fn collect_lambda_args_legacy(mut lambda: Lambda) -> Vec<Argument> {
                     .map(|entry| SingleArg {
                         name: entry.ident().unwrap().to_string(),
                         doc: handle_indentation(
-                            &retrieve_doc_comment(entry.syntax(), Some(1))
+                            &retrieve_doc_comment(entry.syntax(), Some(1), file_path)
                                 .or(retrieve_legacy_comment(entry.syntax(), true))
                                 .unwrap_or_default(),
                         ),
