@@ -24,6 +24,7 @@
 mod comment;
 mod commonmark;
 mod format;
+mod frontmatter;
 mod legacy;
 #[cfg(test)]
 mod test;
@@ -33,6 +34,7 @@ use crate::{format::handle_indentation, legacy::retrieve_legacy_comment};
 use self::comment::get_expr_docs;
 use self::commonmark::*;
 use format::shift_headings;
+use frontmatter::get_imported_content;
 use legacy::{collect_lambda_args_legacy, LegacyDocItem};
 use rnix::{
     ast::{Attr, AttrpathValue, Expr, Inherit, LetIn},
@@ -102,9 +104,14 @@ enum DocItemOrLegacy {
 pub fn retrieve_doc_comment(node: &SyntaxNode, shift_headings_by: Option<usize>) -> Option<String> {
     let doc_comment = get_expr_docs(node);
 
-    doc_comment.map(|doc_comment| {
+    let opts = Options::parse();
+
+    // Doc comments can import external file via "import" in frontmatter
+    let content = get_imported_content(&opts.file, doc_comment.as_ref()).or(doc_comment);
+
+    content.map(|inner| {
         shift_headings(
-            &handle_indentation(&doc_comment).unwrap_or(String::new()),
+            &handle_indentation(&inner).unwrap_or(String::new()),
             // H1 to H4 can be used in the doc-comment with the current rendering.
             // They will be shifted to H3, H6
             // H1 and H2 are currently used by the outer rendering. (category and function name)
