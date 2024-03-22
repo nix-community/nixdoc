@@ -49,13 +49,13 @@ See also: [yaml specification](https://yaml.org/spec/1.2.2/) for how to use YAML
 
 ## Keywords
 
-### `doc-location`
+### `doc_location`
 
 Rules:
 
-1. The `doc-location` keyword can be used to use content from another file INSTEAD of the doc-comments content.
+1. The `doc_location` keyword can be used to use content from another file INSTEAD of the doc-comments content.
 
-2. The value `file` must be given as a path relative to the current file.
+2. The value must be given as a path relative to the current file.
 
 3. Using this directive does not process any content inside the file, using it as-is.
 
@@ -63,7 +63,7 @@ Rules:
 {
   /** 
   ---
-  doc-location: ./path.md
+  doc_location: ./path.md
   ---
   */
   foo = x: x;
@@ -75,7 +75,7 @@ Rules:
 some nice docs!
 ```
 
-In this example, the `doc-location` directive fetches content from `./path.md` treating it as if it were directly within the doc-comment.
+In this example, the `doc_location` directive fetches content from `./path.md` treating it as if it were directly within the doc-comment.
 This allows tracking the reference between the source position and the markdown file, in case of external documentation.
 
 ## Extensibility
