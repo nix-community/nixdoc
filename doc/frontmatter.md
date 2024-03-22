@@ -21,7 +21,8 @@ Fields (from Keywords list) can be defined in frontmatter.
 
 Frontmatter is defined using key-value pairs, encapsulated within triple-dashed lines (---).
 
-While there is no strict specification for frontmatter formats, YAML is commonly preferred. Although JSON could also be used alternatively.
+While there is no strict specification for frontmatter formats, YAML is commonly preferred.
+Although JSON could also be used alternatively.
 
 `{key}` is a placeholder for the list of available keywords listed below.
 
@@ -81,8 +82,7 @@ Since handling recursive or nested imports adds too much complexity for little o
 
 ## Extensibility
 
-The initial set of keywords is intentionally minimalistic,
-focusing on immediate and broadly applicable needs.
+The initial set of keywords is intentionally minimalistic, focusing on immediate and broadly applicable needs.
 
 Community contributions are encouraged to expand this list as new use cases emerge.
 
