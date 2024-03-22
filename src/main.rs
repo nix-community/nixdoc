@@ -41,7 +41,7 @@ use rnix::{
     SyntaxKind, SyntaxNode,
 };
 use rowan::{ast::AstNode, WalkEvent};
-use std::{fs, path::Path};
+use std::{fs, path::Path, process::exit};
 
 use std::collections::HashMap;
 use std::io;
@@ -108,12 +108,26 @@ pub fn retrieve_doc_comment(
 ) -> Option<String> {
     let doc_comment = get_expr_docs(node);
 
-    // Doc comments can import external file via "import" in frontmatter
-    let content = get_imported_content(file, doc_comment.as_ref()).or(doc_comment);
+    doc_comment.map(|inner| {
+        // Must handle indentation before processing yaml frontmatter
+        let content = handle_indentation(&inner).unwrap_or_default();
 
-    content.map(|inner| {
+        let final_content = match get_imported_content(file, &content) {
+            // Use the imported content instead of the original content
+            Ok(Some(imported_content)) => imported_content,
+
+            // Use the original content
+            Ok(None) => content,
+
+            // Abort if we failed to read the frontmatter
+            Err(e) => {
+                eprintln!("{}", e);
+                exit(1);
+            }
+        };
+
         shift_headings(
-            &handle_indentation(&inner).unwrap_or(String::new()),
+            &handle_indentation(&final_content).unwrap_or(String::new()),
             // H1 to H4 can be used in the doc-comment with the current rendering.
             // They will be shifted to H3, H6
             // H1 and H2 are currently used by the outer rendering. (category and function name)

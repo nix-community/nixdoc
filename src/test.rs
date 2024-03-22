@@ -4,7 +4,12 @@ use std::path::PathBuf;
 
 use std::io::Write;
 
-use crate::{collect_entries, format::shift_headings, retrieve_description};
+use crate::{
+    collect_entries,
+    format::shift_headings,
+    frontmatter::{get_imported_content, FrontmatterError, FrontmatterErrorKind},
+    retrieve_description,
+};
 
 #[test]
 fn test_main() {
@@ -209,4 +214,77 @@ fn test_doc_comment_no_duplicate_arguments() {
     let output = String::from_utf8(output).expect("not utf8");
 
     insta::assert_snapshot!(output);
+}
+
+#[test]
+fn test_frontmatter_doc_location_e2e() {
+    let mut output = Vec::new();
+    let src_path = PathBuf::from("test/frontmatter-doc-location.nix");
+    let src = fs::read_to_string(&src_path).unwrap();
+    let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
+    let prefix = "lib";
+    let category = "debug";
+    let desc = retrieve_description(&nix, &"Debug", category, &src_path);
+    writeln!(output, "{}", desc).expect("Failed to write header");
+
+    for entry in collect_entries(nix, prefix, category, &src_path) {
+        entry
+            .write_section(&Default::default(), &mut output)
+            .expect("Failed to write section")
+    }
+
+    let output = String::from_utf8(output).expect("not utf8");
+
+    insta::assert_snapshot!(output);
+}
+
+const NOT_RELATIVE: &str = r#"---
+doc_location: /tmp/not-relative.md
+---
+Other stuff
+"#;
+
+#[test]
+fn test_frontmatter_doc_location_relative() {
+    let base_file = PathBuf::from("test/frontmatter-doc-location.nix");
+
+    let result = get_imported_content(&base_file, NOT_RELATIVE);
+
+    assert_eq!(
+        result.unwrap_err().kind,
+        FrontmatterErrorKind::DocLocationNotRelativePath
+    );
+}
+
+const INVALID_TYPE: &str = r#"---
+doc_location: 1
+---
+Other stuff
+"#;
+
+#[test]
+fn test_frontmatter_doc_location_type() {
+    let base_file = PathBuf::from("test/frontmatter-doc-location.nix");
+
+    let result = get_imported_content(&base_file, INVALID_TYPE);
+
+    assert_eq!(result.unwrap_err().kind, FrontmatterErrorKind::InvalidYaml);
+}
+
+const FILE_NOT_FOUND: &str = r#"---
+doc_location: ./does-not-exist.md
+---
+Other stuff
+"#;
+
+#[test]
+fn test_frontmatter_doc_location_file_not_found() {
+    let base_file = PathBuf::from("test/frontmatter-doc-location.nix");
+
+    let result = get_imported_content(&base_file, FILE_NOT_FOUND);
+
+    assert_eq!(
+        result.unwrap_err().kind,
+        FrontmatterErrorKind::DocLocationFileNotFound
+    );
 }
