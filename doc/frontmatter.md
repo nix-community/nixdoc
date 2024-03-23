@@ -78,15 +78,41 @@ some nice docs!
 In this example, the `doc_location` directive fetches content from `./path.md` treating it as if it were directly within the doc-comment.
 This allows tracking the reference between the source position and the markdown file, in case of external documentation.
 
+#### Design decision: Relative vs Absolute paths
+
+This section justifies the previous decision why absolute paths are not allowed.
+
+<details>
+<summary>Should absolute paths be allowed?</summary>
+
+- (+) When the docs are entirely elsewhere, e.g. `doc/manual/..`, a relative path would have to be `../../..`, very ugly
+  - (-) If only relative paths are allowed, encourages moving docs closer to the source,
+    Makes changing documentation easier.
+    - For the nix-build, adjustments which files are included in the derivation source may be needed.
+  - (-) With only relative paths, it's more similar to NixOS module docs
+- (-) Makes it very confusing with where absolute paths are relative to (build root, git root, `.nix` location, etc.)
+- (-) We can still allow absolute paths later on if necessary
+- (-) Relies on a Git repository and git installed
+- (-) It's unclear where absolute paths are rooted
+  - (+) Could use a syntax like `$GIT_ROOt/foo/bar`
+    - (-) Not a fan of more custom syntax
+
+**Decision**: Not supported by now.
+
+This outcome was discussed in the nix documentation team: https://discourse.nixos.org/t/2024-03-21-documentation-team-meeting-notes-114/41957.
+
+</details>
+
+## Error handling
+
+Any issues encountered during the processing of frontmatter — be it syntax errors, invalid paths, or unsupported keywords—should result in clear, actionable error messages to the user.
+
 ## Extensibility
 
 The initial set of keywords is intentionally minimalistic, focusing on immediate and broadly applicable needs.
 
-Community contributions are encouraged to expand this list as new use cases emerge.
-
-## Error handling
-
-Any issues encountered during the processing of frontmatter—be it syntax errors, invalid paths, or unsupported keywords—should result in clear, actionable error messages to the user.
+When extending this document we ask our contributors to be tooling agnostic, such that documentation wont't rely on any implementation details.
+This approach ensures that the documentation remains independent of specific implementation details. By adhering to this principle, we aim to create a resource that is universally applicable
 
 ## Future work
 

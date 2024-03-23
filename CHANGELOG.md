@@ -1,5 +1,17 @@
 # Changelog
 
+## Version 3.1.0
+
+Added frontmatter feature:
+
+- `doc_location` keyword allows to externalize documentation.
+
+See our [full specification](./doc/frontmatter.md).
+
+by @hsjobeki;
+
+in https://github.com/nix-community/nixdoc/pull/114.
+
 ## Version 3.0.2
 
 Avoid displaying arguments when a doc-comment is already in place.
