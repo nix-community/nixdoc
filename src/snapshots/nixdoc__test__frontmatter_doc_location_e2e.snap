@@ -1,0 +1,18 @@
+---
+source: src/test.rs
+expression: output
+---
+# Debug {#sec-functions-library-debug}
+## Imported
+
+This is be the documentation
+
+## `lib.debug.item` {#function-library-lib.debug.item}
+
+### Imported
+
+This is be the documentation
+
+## `lib.debug.optional` {#function-library-lib.debug.optional}
+
+No frontmatter

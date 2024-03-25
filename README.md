@@ -18,17 +18,20 @@ It is important to start doc-comments with the additional asterisk (`*`) -> `/**
 
 The content of the doc-comment should conform to the [Commonmark](https://spec.commonmark.org/0.30/) specification.
 
-### Example
+### Examples
+
+#### Example: simple but complete example
 
 The following is an example of markdown documentation for new and current users of nixdoc.
 
-> Sidenote: Indentation is automatically detected and should be consistent across the content. 
-> 
+> Sidenote: Indentation is automatically detected and should be consistent across the content.
+>
 > If you are used to multiline-strings (`''`) in nix this should be intuitive to follow.
 
+`simple.nix`
 ````nix
 {
-  /** 
+  /**
     This function adds two numbers
 
     # Example
@@ -60,10 +63,39 @@ The following is an example of markdown documentation for new and current users 
 
 > Note: Within nixpkgs the convention of using [definition-lists](https://www.markdownguide.org/extended-syntax/#definition-lists) for documenting arguments has been established.
 
+#### Example: using frontmatter
 
-## Custom nixdoc format (Legacy)
+In some cases, it may be desirable to store the documentation in a separate Markdown file.
+Nixdoc supports frontmatter, which allows a separate Markdown file to be referenced within the doc comment.
 
-You should consider migrating to the newer format described above.
+`fontmatter.nix`
+````nix
+{
+  /**
+    ---
+    doc_location: ./docs.md
+    ---
+  */
+  add = a: b: a + b;
+}
+````
+
+`./docs.md`
+````markdown
+# Add
+
+A simple function that adds two numbers.
+````
+
+> Note: Frontmatter works only with the newer doc-comments `/** */`.
+
+See our [frontmatter specification](./doc/frontmatter.md) for further information.
+
+## Legacy support
+
+### Custom nixdoc format
+
+You should consider migrating to the newer format described above. The format described in this section will be removed with the next major release.
 
 See [Migration guide](./doc/migration.md).
 
