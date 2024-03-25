@@ -241,7 +241,6 @@ fn test_frontmatter_doc_location_e2e() {
 const NOT_RELATIVE: &str = r#"---
 doc_location: /tmp/not-relative.md
 ---
-Other stuff
 "#;
 
 #[test]
@@ -256,10 +255,27 @@ fn test_frontmatter_doc_location_relative() {
     );
 }
 
+const CONFLICT_DOCS: &str = r#"---
+doc_location: docs.md
+---
+Other stuff
+"#;
+
+#[test]
+fn test_frontmatter_conflict_docs() {
+    let base_file = PathBuf::from("test/frontmatter-doc-location.nix");
+
+    let result = get_imported_content(&base_file, CONFLICT_DOCS);
+
+    assert_eq!(
+        result.unwrap_err().kind,
+        FrontmatterErrorKind::DocLocationConflictWithContent
+    );
+}
+
 const INVALID_TYPE: &str = r#"---
 doc_location: 1
 ---
-Other stuff
 "#;
 
 #[test]
@@ -274,7 +290,6 @@ fn test_frontmatter_doc_location_type() {
 const FILE_NOT_FOUND: &str = r#"---
 doc_location: ./does-not-exist.md
 ---
-Other stuff
 "#;
 
 #[test]

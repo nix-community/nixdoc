@@ -19,6 +19,7 @@ pub struct Frontmatter {
 pub enum FrontmatterErrorKind {
     InvalidYaml,
     DocLocationFileNotFound,
+    DocLocationConflictWithContent,
     DocLocationNotRelativePath,
 }
 
@@ -57,10 +58,21 @@ pub fn get_imported_content(
     }
 
     let pod = result.data.unwrap();
+    let has_content = !result.content.trim().is_empty();
     match pod.deserialize::<Frontmatter>() {
         Ok(metadata) => {
             let abs_import = match metadata.doc_location {
                 Some(doc_location) => {
+                    if has_content {
+                        return Err(FrontmatterError {
+                            message: format!(
+                                "{:?}: doc_location: if this field is specified no other content is allowed for the doc-comment.",
+                                file_path
+                            ),
+                            kind: FrontmatterErrorKind::DocLocationConflictWithContent,
+                        });
+                    }
+
                     let import_path: PathBuf = PathBuf::from(&doc_location);
                     let relative_path = RelativePath::from_path(&import_path);
 
