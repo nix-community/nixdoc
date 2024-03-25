@@ -63,7 +63,7 @@ The following is an example of markdown documentation for new and current users 
 
 > Note: Within nixpkgs the convention of using [definition-lists](https://www.markdownguide.org/extended-syntax/#definition-lists) for documenting arguments has been established.
 
-## Example: using frontmatter
+#### Example: using frontmatter
 
 In some cases, it may be desirable to store the documentation in a separate Markdown file.
 Nixdoc supports frontmatter, which allows a separate Markdown file to be referenced within the doc comment.

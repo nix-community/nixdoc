@@ -34,16 +34,12 @@ Example:
 {
   /** 
     ---
-    tags:
-      - foo
-      - bar
+    key: value
     ---
   */
   foo = x: x;
 }
 ```
-
-In this example `key` is `tags` and `value` is `List("foo", "bar")`.
 
 See also: [yaml specification](https://yaml.org/spec/1.2.2/) for how to use YAML.
 
@@ -53,11 +49,11 @@ See also: [yaml specification](https://yaml.org/spec/1.2.2/) for how to use YAML
 
 Rules:
 
-1. The `doc_location` keyword can be used to use content from another file INSTEAD of the doc-comments content.
+1. The `doc_location` keyword can be used to use content from another file and **forbid** any further content to be added to the existing doc-comment.
 
 2. The value must be given as a path relative to the current file.
 
-3. Using this directive does not process any content inside the file, using it as-is.
+3. The file pointed to by `doc_location` will be used as-is, without any further processing done to it.
 
 ```nix
 {
@@ -75,31 +71,29 @@ Rules:
 some nice docs!
 ```
 
-In this example, the `doc_location` directive fetches content from `./path.md` treating it as if it were directly within the doc-comment.
+In this example, the `doc_location` directive fetches content from `./path.md` and treats it as the actual doc-comment.
 This allows tracking the reference between the source position and the markdown file, in case of external documentation.
 
 #### Design decision: Relative vs Absolute paths
 
-This section justifies the previous decision why absolute paths are not allowed.
+This section explains the decision to only use relative paths and not support absolute paths for the file pointed to by `doc_location`.
 
 <details>
 <summary>Should absolute paths be allowed?</summary>
 
 - (+) When the docs are entirely elsewhere, e.g. `doc/manual/..`, a relative path would have to be `../../..`, very ugly
-  - (-) If only relative paths are allowed, encourages moving docs closer to the source,
-    Makes changing documentation easier.
-    - For the nix-build, adjustments which files are included in the derivation source may be needed.
+  - (-) If only relative paths are allowed, encourages moving docs closer to the source, makes changing documentation easier.
+    - For the nix-build, adjustments of which files are included in the derivation source may be needed.
   - (-) With only relative paths, it's more similar to NixOS module docs
-- (-) Makes it very confusing with where absolute paths are relative to (build root, git root, `.nix` location, etc.)
 - (-) We can still allow absolute paths later on if necessary
-- (-) Relies on a Git repository and git installed
-- (-) It's unclear where absolute paths are rooted
-  - (+) Could use a syntax like `$GIT_ROOt/foo/bar`
+- (-) Makes it very confusing where absolute paths are relative to (build root, git root, `.nix` location, etc.)
+  - (+) Could use a syntax like `$GIT_ROOT/foo/bar`
+    - (-) Relies on a Git repository and git installed
     - (-) Not a fan of more custom syntax
 
 **Decision**: Not supported by now.
 
-This outcome was discussed in the nix documentation team: https://discourse.nixos.org/t/2024-03-21-documentation-team-meeting-notes-114/41957.
+This outcome was discussed in the nix documentation team meeting: https://discourse.nixos.org/t/2024-03-21-documentation-team-meeting-notes-114/41957.
 
 </details>
 
@@ -112,7 +106,7 @@ Any issues encountered during the processing of frontmatter — be it syntax err
 The initial set of keywords is intentionally minimalistic, focusing on immediate and broadly applicable needs.
 
 When extending this document we ask our contributors to be tooling agnostic, such that documentation wont't rely on any implementation details.
-This approach ensures that the documentation remains independent of specific implementation details. By adhering to this principle, we aim to create a resource that is universally applicable
+This approach ensures that the documentation remains independent of specific implementation details. By adhering to this principle, we aim to create a resource that is universally applicable.
 
 ## Future work
 
