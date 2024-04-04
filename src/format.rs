@@ -69,27 +69,23 @@ pub fn handle_indentation(raw: &str) -> Option<String> {
 pub fn shift_headings(raw: &str, levels: u8) -> String {
     let arena = Arena::new();
 
+    // Change some of the default formatting options for better compatibility with nixos-render-docs (nrd).
+    let mut options: Options = ComrakOptions::default();
+    // Disable automatic generation of header IDs. nrd will generate them.
+    options.extension.header_ids = None;
+
     // Parse the document into an AST
-    let root = parse_document(&arena, raw, &ComrakOptions::default());
+    let root = parse_document(&arena, raw, &options);
     increase_heading_levels(root, levels);
 
     let mut markdown_output = vec![];
 
-    // Change some of the default formatting options for better compatibility with nixos-render-docs (nrd).
-    let mut options: Options = ComrakOptions::default();
-
-    // Each newline in the doc-comment sources create a visual line-break in the output,
-    // Making it more intuitive for those who expect a more "what you see is what you get" behavior.
-    // This doesnt conflict with the markdown spec, as it allows for hardbreaks. And allows to save vertical space in doc-comments.
-    options.render.hardbreaks = true;
-
-    // Disable automatic generation of header IDs. nrd will generate them.
-    options.extension.header_ids = None;
-
-    comrak::format_commonmark(root, &ComrakOptions::default(), &mut markdown_output).unwrap();
-    let markdown_output = String::from_utf8(markdown_output).unwrap();
-
-    return markdown_output;
+    // This could only fail if we transform the AST in a way that is not supported by the markdown renderer.
+    // Since the AST stems from comrak itself, this should never happen.
+    comrak::format_commonmark(root, &options, &mut markdown_output)
+        .expect("Failed to format markdown");
+    // We can safely assume that the output is valid UTF-8, since comrak uses rust strings which are valid UTF-8.
+    String::from_utf8(markdown_output).unwrap()
 }
 
 // Internal function to operate on the markdown AST
@@ -97,7 +93,7 @@ fn increase_heading_levels<'a>(root: &'a AstNode<'a>, levels: u8) {
     for node in root.descendants() {
         match &mut node.data.borrow_mut().value {
             NodeValue::Heading(heading) => {
-                // Increase heading level by 2, but don't exceed the max level 6
+                // Increase heading level, but don't exceed the max level 6
                 heading.level = (heading.level + levels).min(6);
             }
             _ => {}
