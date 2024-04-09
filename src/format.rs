@@ -1,3 +1,7 @@
+use comrak::{
+    nodes::{AstNode, NodeValue},
+    parse_document, Arena, ComrakOptions, Options,
+};
 use textwrap::dedent;
 
 /// Ensure all lines in a multi-line doc-comments have the same indentation.
@@ -62,39 +66,37 @@ pub fn handle_indentation(raw: &str) -> Option<String> {
 /// H4 -> H6
 /// H6 -> H6
 ///
-pub fn shift_headings(raw: &str, levels: usize) -> String {
-    let mut result = String::new();
-    for line in raw.split_inclusive('\n') {
-        if line.trim_start().starts_with('#') {
-            result.push_str(&handle_heading(line, levels));
-        } else {
-            result.push_str(line);
-        }
-    }
-    result
+pub fn shift_headings(raw: &str, levels: u8) -> String {
+    let arena = Arena::new();
+
+    // Change some of the default formatting options for better compatibility with nixos-render-docs (nrd).
+    let mut options: Options = ComrakOptions::default();
+    // Disable automatic generation of header IDs. nrd will generate them.
+    options.extension.header_ids = None;
+
+    // Parse the document into an AST
+    let root = parse_document(&arena, raw, &options);
+    increase_heading_levels(root, levels);
+
+    let mut markdown_output = vec![];
+
+    // This could only fail if we transform the AST in a way that is not supported by the markdown renderer.
+    // Since the AST stems from comrak itself, this should never happen.
+    comrak::format_commonmark(root, &options, &mut markdown_output)
+        .expect("Failed to format markdown");
+    // We can safely assume that the output is valid UTF-8, since comrak uses rust strings which are valid UTF-8.
+    String::from_utf8(markdown_output).unwrap()
 }
 
-// Dumb heading parser.
-pub fn handle_heading(line: &str, levels: usize) -> String {
-    let chars = line.chars();
-
-    // let mut leading_trivials: String = String::new();
-    let mut hashes = String::new();
-    let mut rest = String::new();
-    for char in chars {
-        match char {
-            '#' if rest.is_empty() => {
-                // only collect hashes if no other tokens
-                hashes.push(char)
+// Internal function to operate on the markdown AST
+fn increase_heading_levels<'a>(root: &'a AstNode<'a>, levels: u8) {
+    for node in root.descendants() {
+        match &mut node.data.borrow_mut().value {
+            NodeValue::Heading(heading) => {
+                // Increase heading level, but don't exceed the max level 6
+                heading.level = (heading.level + levels).min(6);
             }
-            _ => rest.push(char),
+            _ => {}
         }
     }
-    let new_hashes = match hashes.len() + levels {
-        // We reached the maximum heading size.
-        6.. => "#".repeat(6),
-        _ => "#".repeat(hashes.len() + levels),
-    };
-
-    format!("{new_hashes}{rest}")
 }

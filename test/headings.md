@@ -4,6 +4,24 @@
 
 ### h3-heading
 
+```nix
+# A comment should not be shifted
+```
+
+```
+# Some pseudocode
+map a from b -> 1
+```
+
+````nix
+/**
+   ```nix
+   # A nested comment should not be shifted
+   ```
+*/
+1
+````
+
 #### h4-heading
 
 This should be h6

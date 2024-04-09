@@ -1,5 +1,13 @@
 # Changelog
 
+## Version 3.0.3
+
+Fixes: shifting issue with commonmark headings https://github.com/nix-community/nixdoc/issues/113
+
+by @hsjobeki;
+
+in https://github.com/nix-community/nixdoc/pull/115.
+
 ## Version 3.0.2
 
 Avoid displaying arguments when a doc-comment is already in place.
