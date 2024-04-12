@@ -20,11 +20,13 @@ impl<'a> CustomRenderer<'a> {
         for node in root.children() {
             match &node.data.borrow().value {
                 NodeValue::Heading(heading) => {
-                    // Handling headings specifically
+                    // Handling headings specifically.
                     write!(buffer, "{} ", "#".repeat(heading.level as usize)).expect(
                         "Failed to write UTF-8. Make sure files contains only valid UTF-8.",
                     );
 
+                    // Handle the children of the heading node
+                    // Headings have only one child: NodeValue::Text
                     node.first_child()
                         .map(|child| match child.data.borrow().value {
                             NodeValue::Text(ref text) => {
@@ -37,6 +39,8 @@ impl<'a> CustomRenderer<'a> {
                 _ => format_commonmark(node, self.options, buffer)
                     .expect("Failed to format markdown using the default comrak formatter."),
             }
+            // Insert a newline after each node
+            // This behavior is the same as the default comrak-formatter behavior.
             buffer.push(b'\n');
         }
     }
