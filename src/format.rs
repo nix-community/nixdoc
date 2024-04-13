@@ -27,18 +27,21 @@ impl<'a> CustomRenderer<'a> {
 
                     // Handle the children of the heading node
                     // Headings have only one child: NodeValue::Text
-                    node.first_child()
-                        .map(|child| match child.data.borrow().value {
-                            NodeValue::Text(ref text) => {
-                                write!(buffer, "{}\n", text).expect("Failed to write UTF-8. Make sure files contains only valid UTF-8.");
-                            }
-                            _ => (),
-                        });
+                    if let Some(child) = node.first_child() {
+                        if let NodeValue::Text(ref text) = child.data.borrow().value {
+                            writeln!(buffer, "{}", text).expect(
+                                "Failed to write UTF-8. Make sure files contains only valid UTF-8.",
+                            );
+                        };
+                    }
                 }
                 // Handle other node types using comrak's default behavior
-                _ => format_commonmark(node, self.options, buffer)
-                    .expect("Failed to format markdown using the default comrak formatter."),
-            }
+                _ => {
+                    format_commonmark(node, self.options, buffer)
+                        .expect("Failed to format markdown using the default comrak formatter.");
+                }
+            };
+
             // Insert a newline after each node
             // This behavior is the same as the default comrak-formatter behavior.
             buffer.push(b'\n');
