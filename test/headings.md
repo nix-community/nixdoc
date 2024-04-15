@@ -2,6 +2,8 @@
 
 ## h2-heading
 
+## h2-heading-with-id {#some-id}
+
 ### h3-heading
 
 ```nix

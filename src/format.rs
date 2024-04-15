@@ -1,8 +1,53 @@
 use comrak::{
+    format_commonmark,
     nodes::{AstNode, NodeValue},
     parse_document, Arena, ComrakOptions, Options,
 };
-use textwrap::dedent;
+use std::io::Write;
+use textwrap::dedent; // For using the write! macro
+
+// Your custom renderer
+struct CustomRenderer<'a> {
+    options: &'a ComrakOptions,
+}
+
+impl<'a> CustomRenderer<'a> {
+    fn new(options: &'a ComrakOptions) -> Self {
+        CustomRenderer { options }
+    }
+
+    fn format_node(&self, root: &'a AstNode<'a>, buffer: &mut Vec<u8>) {
+        for node in root.children() {
+            match &node.data.borrow().value {
+                NodeValue::Heading(heading) => {
+                    // Handling headings specifically.
+                    write!(buffer, "{} ", "#".repeat(heading.level as usize)).expect(
+                        "Failed to write UTF-8. Make sure files contains only valid UTF-8.",
+                    );
+
+                    // Handle the children of the heading node
+                    // Headings have only one child: NodeValue::Text
+                    if let Some(child) = node.first_child() {
+                        if let NodeValue::Text(ref text) = child.data.borrow().value {
+                            writeln!(buffer, "{}", text).expect(
+                                "Failed to write UTF-8. Make sure files contains only valid UTF-8.",
+                            );
+                        };
+                    }
+                }
+                // Handle other node types using comrak's default behavior
+                _ => {
+                    format_commonmark(node, self.options, buffer)
+                        .expect("Failed to format markdown using the default comrak formatter.");
+                }
+            };
+
+            // Insert a newline after each node
+            // This behavior is the same as the default comrak-formatter behavior.
+            buffer.push(b'\n');
+        }
+    }
+}
 
 /// Ensure all lines in a multi-line doc-comments have the same indentation.
 ///
@@ -79,13 +124,11 @@ pub fn shift_headings(raw: &str, levels: u8) -> String {
     increase_heading_levels(root, levels);
 
     let mut markdown_output = vec![];
+    let renderer = CustomRenderer::new(&options);
+    renderer.format_node(root, &mut markdown_output);
 
-    // This could only fail if we transform the AST in a way that is not supported by the markdown renderer.
-    // Since the AST stems from comrak itself, this should never happen.
-    comrak::format_commonmark(root, &options, &mut markdown_output)
-        .expect("Failed to format markdown");
     // We can safely assume that the output is valid UTF-8, since comrak uses rust strings which are valid UTF-8.
-    String::from_utf8(markdown_output).unwrap()
+    String::from_utf8(markdown_output).expect("Markdown contains invalid UTF-8")
 }
 
 // Internal function to operate on the markdown AST

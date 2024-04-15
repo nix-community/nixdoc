@@ -1,5 +1,13 @@
 # Changelog
 
+## Version 3.0.4
+
+Fixes: issue with headings ids introduced with 3.0.3
+
+by @hsjobeki;
+
+in https://github.com/nix-community/nixdoc/pull/117.
+
 ## Version 3.0.3
 
 Fixes: shifting issue with commonmark headings https://github.com/nix-community/nixdoc/issues/113
