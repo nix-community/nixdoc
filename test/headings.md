@@ -10,10 +10,14 @@
 # A comment should not be shifted
 ```
 
+### annother heading
+
 ```
 # Some pseudocode
 map a from b -> 1
 ```
+
+### Some heading
 
 ````nix
 /**
@@ -22,15 +26,44 @@ map a from b -> 1
    ```
 */
 1
+# A comment
 ````
 
 #### h4-heading
 
-This should be h6
+Nested tilde fences
+
+~~~~~nix
+/*
+   ~~~~nix
+      /**
+         ~~~nix
+            # A nested comment should not be shifted
+            42
+         ~~~
+      */
+      1
+      # A nested comment ^
+   ~~~~
+*/
+# A comment ^
+foo
+~~~~~
+
 
 ##### h5-heading
 
-This should be h6 as well
+Mixed fences
+
+~~~nix
+/**
+   ```nix
+   # A nested comment should not be shifted
+   ```
+*/
+1
+# A comment
+~~~
 
 ###### h6-heading
 

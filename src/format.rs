@@ -1,53 +1,4 @@
-use comrak::{
-    format_commonmark,
-    nodes::{AstNode, NodeValue},
-    parse_document, Arena, ComrakOptions, Options,
-};
-use std::io::Write;
-use textwrap::dedent; // For using the write! macro
-
-// Your custom renderer
-struct CustomRenderer<'a> {
-    options: &'a ComrakOptions,
-}
-
-impl<'a> CustomRenderer<'a> {
-    fn new(options: &'a ComrakOptions) -> Self {
-        CustomRenderer { options }
-    }
-
-    fn format_node(&self, root: &'a AstNode<'a>, buffer: &mut Vec<u8>) {
-        for node in root.children() {
-            match &node.data.borrow().value {
-                NodeValue::Heading(heading) => {
-                    // Handling headings specifically.
-                    write!(buffer, "{} ", "#".repeat(heading.level as usize)).expect(
-                        "Failed to write UTF-8. Make sure files contains only valid UTF-8.",
-                    );
-
-                    // Handle the children of the heading node
-                    // Headings have only one child: NodeValue::Text
-                    if let Some(child) = node.first_child() {
-                        if let NodeValue::Text(ref text) = child.data.borrow().value {
-                            writeln!(buffer, "{}", text).expect(
-                                "Failed to write UTF-8. Make sure files contains only valid UTF-8.",
-                            );
-                        };
-                    }
-                }
-                // Handle other node types using comrak's default behavior
-                _ => {
-                    format_commonmark(node, self.options, buffer)
-                        .expect("Failed to format markdown using the default comrak formatter.");
-                }
-            };
-
-            // Insert a newline after each node
-            // This behavior is the same as the default comrak-formatter behavior.
-            buffer.push(b'\n');
-        }
-    }
-}
+use textwrap::dedent;
 
 /// Ensure all lines in a multi-line doc-comments have the same indentation.
 ///
@@ -111,35 +62,71 @@ pub fn handle_indentation(raw: &str) -> Option<String> {
 /// H4 -> H6
 /// H6 -> H6
 ///
-pub fn shift_headings(raw: &str, levels: u8) -> String {
-    let arena = Arena::new();
+pub fn shift_headings(raw: &str, levels: usize) -> String {
+    let mut result = String::new();
 
-    // Change some of the default formatting options for better compatibility with nixos-render-docs (nrd).
-    let mut options: Options = ComrakOptions::default();
-    // Disable automatic generation of header IDs. nrd will generate them.
-    options.extension.header_ids = None;
-
-    // Parse the document into an AST
-    let root = parse_document(&arena, raw, &options);
-    increase_heading_levels(root, levels);
-
-    let mut markdown_output = vec![];
-    let renderer = CustomRenderer::new(&options);
-    renderer.format_node(root, &mut markdown_output);
-
-    // We can safely assume that the output is valid UTF-8, since comrak uses rust strings which are valid UTF-8.
-    String::from_utf8(markdown_output).expect("Markdown contains invalid UTF-8")
-}
-
-// Internal function to operate on the markdown AST
-fn increase_heading_levels<'a>(root: &'a AstNode<'a>, levels: u8) {
-    for node in root.descendants() {
-        match &mut node.data.borrow_mut().value {
-            NodeValue::Heading(heading) => {
-                // Increase heading level, but don't exceed the max level 6
-                heading.level = (heading.level + levels).min(6);
+    let mut curr_fence: Option<String> = None;
+    for line in raw.split_inclusive('\n') {
+        // Code blocks can only start with backticks or tildes
+        if line.starts_with("```") | line.starts_with("~~~") {
+            if curr_fence.is_none() {
+                // Start of code block
+                curr_fence = get_fence(line);
+            } else if curr_fence.as_deref() == Some(line.trim_end()) {
+                // End of code block (same fence as start)
+                curr_fence = None;
             }
-            _ => {}
+        }
+
+        if curr_fence.is_none() && line.starts_with('#') {
+            let heading = handle_heading(line, levels);
+            result.push_str(&heading);
+        } else {
+            result.push_str(line);
         }
     }
+    result
+}
+
+pub fn get_fence(line: &str) -> Option<String> {
+    let mut chars = line.chars();
+    if let Some(first_char) = chars.next() {
+        if first_char == '`' || first_char == '~' {
+            let mut count = 1;
+            for ch in chars {
+                if ch == first_char {
+                    // count the number of repeated code fence characters
+                    count += 1;
+                } else {
+                    break;
+                }
+            }
+            return Some(std::iter::repeat(first_char).take(count).collect());
+        }
+    }
+    None
+}
+// Dumb heading parser.
+pub fn handle_heading(line: &str, levels: usize) -> String {
+    let chars = line.chars();
+
+    // let mut leading_trivials: String = String::new();
+    let mut hashes = String::new();
+    let mut rest = String::new();
+    for char in chars {
+        match char {
+            '#' if rest.is_empty() => {
+                // only collect hashes if no other tokens
+                hashes.push(char)
+            }
+            _ => rest.push(char),
+        }
+    }
+    let new_hashes = match hashes.len() + levels {
+        // We reached the maximum heading size.
+        6.. => "#".repeat(6),
+        _ => "#".repeat(hashes.len() + levels),
+    };
+
+    format!("{new_hashes}{rest}")
 }
