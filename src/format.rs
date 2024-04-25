@@ -65,30 +65,61 @@ pub fn handle_indentation(raw: &str) -> Option<String> {
 pub fn shift_headings(raw: &str, levels: usize) -> String {
     let mut result = String::new();
 
-    let mut curr_fence: Option<String> = None;
-    for line in raw.split_inclusive('\n') {
+    let mut curr_fence: Option<(usize, char)> = None;
+    for raw_line in raw.split_inclusive('\n') {
         // Code blocks can only start with backticks or tildes
-        if line.starts_with("```") | line.starts_with("~~~") {
+        let fence_line = &trim_leading_whitespace(raw_line, 3);
+        if fence_line.starts_with("```") | fence_line.starts_with("~~~") {
+            let fence_info = get_fence(fence_line, true);
             if curr_fence.is_none() {
                 // Start of code block
-                curr_fence = get_fence(line);
-            } else if curr_fence.as_deref() == Some(line.trim_end()) {
-                // End of code block (same fence as start)
-                curr_fence = None;
+                curr_fence = fence_info;
+            } else {
+                // Possible end of code block. Ending fences cannot have info strings
+                match (curr_fence, get_fence(fence_line, false)) {
+                    // End of code block must have the same fence type as the start (~~~ or ```)
+                    // Code blocks must be ended with at least the same number of backticks or tildes as the start fence
+                    (Some((start_count, start_char)), Some((end_count, end_char))) => {
+                        if start_count <= end_count && start_char == end_char {
+                            // End of code block (same fence as start)
+                            curr_fence = None;
+                        }
+                    }
+                    _ => {}
+                };
             }
         }
 
-        if curr_fence.is_none() && line.starts_with('#') {
-            let heading = handle_heading(line, levels);
+        if curr_fence.is_none() && raw_line.starts_with('#') {
+            let heading = handle_heading(raw_line, levels);
             result.push_str(&heading);
         } else {
-            result.push_str(line);
+            result.push_str(raw_line);
         }
     }
     result
 }
 
-pub fn get_fence(line: &str) -> Option<String> {
+/// Removes leading whitespaces from code fences
+/// However maximum of [max] whitespaces are removed.
+/// This is useful for code fences may have leading whitespaces (0-3).
+fn trim_leading_whitespace(input: &str, max: usize) -> String {
+    let mut count = 0;
+    input
+        .trim_start_matches(|c: char| {
+            if c.is_whitespace() && count < max {
+                count += 1;
+                true
+            } else {
+                false
+            }
+        })
+        .to_string()
+}
+/// A function that returns the count of a code fence line.
+/// Param [allow_info] allows to keep info strings in code fences.
+/// Ending fences cannot have info strings
+pub fn get_fence(line: &str, allow_info: bool) -> Option<(usize, char)> {
     let mut chars = line.chars();
     if let Some(first_char) = chars.next() {
         if first_char == '`' || first_char == '~' {
@@ -98,10 +129,14 @@ pub fn get_fence(line: &str) -> Option<String> {
                     // count the number of repeated code fence characters
                     count += 1;
                 } else {
-                    break;
+                    if !allow_info && ch != '\n' {
+                        // info string is not allowed this is not a code fence
+                        return None;
+                    }
+                    return Some((count, first_char));
                 }
             }
-            return Some(std::iter::repeat(first_char).take(count).collect());
+            return Some((count, first_char));
         }
     }
     None

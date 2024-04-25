@@ -21,6 +21,27 @@ expression: output
 map a from b -> 1
 ```
 
+##### indented (0-3) fences
+
+  ``` lang info
+# Some pseudocode
+map a from b -> 1
+   ```
+
+##### indented (0-3) fences asymmetric
+
+```
+# Some pseudocode
+map a from b -> 1
+   ```
+
+##### More closing fences than opening
+
+````
+# Some pseudocode
+map a from b -> 1
+```````
+
 ##### Some heading
 
 ````nix
@@ -53,7 +74,6 @@ Nested tilde fences
 # A comment ^
 foo
 ~~~~~
-
 
 ###### h5-heading
 
