@@ -2,7 +2,19 @@
 
 ## h2-heading
 
+3 leading whitespaces are okay for headings
+
+   ## h2 heading
+
+    # code block
+
+
 ## h2-heading-with-id {#some-id}
+
+Indented code block
+
+    # Code comment
+    a = 1;
 
 ### h3-heading
 
@@ -18,6 +30,8 @@ map a from b -> 1
 ```
 
 ### indented (0-3) fences
+
+3 leading whitespaces are okay for code fences
 
   ``` lang info
 # Some pseudocode

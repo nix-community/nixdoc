@@ -68,6 +68,7 @@ pub fn shift_headings(raw: &str, levels: usize) -> String {
     let mut curr_fence: Option<(usize, char)> = None;
     for raw_line in raw.split_inclusive('\n') {
         // Code blocks can only start with backticks or tildes
+        // code fences can be indented by 0-3 spaces see commonmark spec.
         let fence_line = &trim_leading_whitespace(raw_line, 3);
         if fence_line.starts_with("```") | fence_line.starts_with("~~~") {
             let fence_info = get_fence(fence_line, true);
@@ -90,8 +91,11 @@ pub fn shift_headings(raw: &str, levels: usize) -> String {
             }
         }
 
-        if curr_fence.is_none() && raw_line.starts_with('#') {
-            let heading = handle_heading(raw_line, levels);
+        // Remove up to 0-3 leading whitespaces.
+        // If the line has 4 or more whitespaces it is not a heading according to commonmark spec.
+        let heading_line = &trim_leading_whitespace(raw_line, 3);
+        if curr_fence.is_none() && heading_line.starts_with('#') {
+            let heading = handle_heading(heading_line, levels);
             result.push_str(&heading);
         } else {
             result.push_str(raw_line);
@@ -100,7 +104,7 @@ pub fn shift_headings(raw: &str, levels: usize) -> String {
     result
 }
 
-/// Removes leading whitespaces from code fences
+/// Removes leading whitespaces from code fences if present
 /// However maximum of [max] whitespaces are removed.
 /// This is useful for code fences may have leading whitespaces (0-3).
 fn trim_leading_whitespace(input: &str, max: usize) -> String {
@@ -145,7 +149,6 @@ pub fn get_fence(line: &str, allow_info: bool) -> Option<(usize, char)> {
 pub fn handle_heading(line: &str, levels: usize) -> String {
     let chars = line.chars();
 
-    // let mut leading_trivials: String = String::new();
     let mut hashes = String::new();
     let mut rest = String::new();
     for char in chars {
