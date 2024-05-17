@@ -99,7 +99,7 @@ enum DocItemOrLegacy {
 }
 
 /// Returns a rfc145 doc-comment if one is present
-pub fn retrieve_doc_comment(node: &SyntaxNode, shift_headings_by: Option<u8>) -> Option<String> {
+pub fn retrieve_doc_comment(node: &SyntaxNode, shift_headings_by: Option<usize>) -> Option<String> {
     let doc_comment = get_expr_docs(node);
 
     doc_comment.map(|doc_comment| {

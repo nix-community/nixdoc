@@ -1,53 +1,4 @@
-use comrak::{
-    format_commonmark,
-    nodes::{AstNode, NodeValue},
-    parse_document, Arena, ComrakOptions, Options,
-};
-use std::io::Write;
-use textwrap::dedent; // For using the write! macro
-
-// Your custom renderer
-struct CustomRenderer<'a> {
-    options: &'a ComrakOptions,
-}
-
-impl<'a> CustomRenderer<'a> {
-    fn new(options: &'a ComrakOptions) -> Self {
-        CustomRenderer { options }
-    }
-
-    fn format_node(&self, root: &'a AstNode<'a>, buffer: &mut Vec<u8>) {
-        for node in root.children() {
-            match &node.data.borrow().value {
-                NodeValue::Heading(heading) => {
-                    // Handling headings specifically.
-                    write!(buffer, "{} ", "#".repeat(heading.level as usize)).expect(
-                        "Failed to write UTF-8. Make sure files contains only valid UTF-8.",
-                    );
-
-                    // Handle the children of the heading node
-                    // Headings have only one child: NodeValue::Text
-                    if let Some(child) = node.first_child() {
-                        if let NodeValue::Text(ref text) = child.data.borrow().value {
-                            writeln!(buffer, "{}", text).expect(
-                                "Failed to write UTF-8. Make sure files contains only valid UTF-8.",
-                            );
-                        };
-                    }
-                }
-                // Handle other node types using comrak's default behavior
-                _ => {
-                    format_commonmark(node, self.options, buffer)
-                        .expect("Failed to format markdown using the default comrak formatter.");
-                }
-            };
-
-            // Insert a newline after each node
-            // This behavior is the same as the default comrak-formatter behavior.
-            buffer.push(b'\n');
-        }
-    }
-}
+use textwrap::dedent;
 
 /// Ensure all lines in a multi-line doc-comments have the same indentation.
 ///
@@ -111,35 +62,109 @@ pub fn handle_indentation(raw: &str) -> Option<String> {
 /// H4 -> H6
 /// H6 -> H6
 ///
-pub fn shift_headings(raw: &str, levels: u8) -> String {
-    let arena = Arena::new();
+pub fn shift_headings(raw: &str, levels: usize) -> String {
+    let mut result = String::new();
 
-    // Change some of the default formatting options for better compatibility with nixos-render-docs (nrd).
-    let mut options: Options = ComrakOptions::default();
-    // Disable automatic generation of header IDs. nrd will generate them.
-    options.extension.header_ids = None;
-
-    // Parse the document into an AST
-    let root = parse_document(&arena, raw, &options);
-    increase_heading_levels(root, levels);
-
-    let mut markdown_output = vec![];
-    let renderer = CustomRenderer::new(&options);
-    renderer.format_node(root, &mut markdown_output);
-
-    // We can safely assume that the output is valid UTF-8, since comrak uses rust strings which are valid UTF-8.
-    String::from_utf8(markdown_output).expect("Markdown contains invalid UTF-8")
-}
-
-// Internal function to operate on the markdown AST
-fn increase_heading_levels<'a>(root: &'a AstNode<'a>, levels: u8) {
-    for node in root.descendants() {
-        match &mut node.data.borrow_mut().value {
-            NodeValue::Heading(heading) => {
-                // Increase heading level, but don't exceed the max level 6
-                heading.level = (heading.level + levels).min(6);
+    let mut curr_fence: Option<(usize, char)> = None;
+    for raw_line in raw.split_inclusive('\n') {
+        // Code blocks can only start with backticks or tildes
+        // code fences can be indented by 0-3 spaces see commonmark spec.
+        let fence_line = &trim_leading_whitespace(raw_line, 3);
+        if fence_line.starts_with("```") | fence_line.starts_with("~~~") {
+            let fence_info = get_fence(fence_line, true);
+            if curr_fence.is_none() {
+                // Start of code block
+                curr_fence = fence_info;
+            } else {
+                // Possible end of code block. Ending fences cannot have info strings
+                match (curr_fence, get_fence(fence_line, false)) {
+                    // End of code block must have the same fence type as the start (~~~ or ```)
+                    // Code blocks must be ended with at least the same number of backticks or tildes as the start fence
+                    (Some((start_count, start_char)), Some((end_count, end_char))) => {
+                        if start_count <= end_count && start_char == end_char {
+                            // End of code block (same fence as start)
+                            curr_fence = None;
+                        }
+                    }
+                    _ => {}
+                };
             }
-            _ => {}
+        }
+
+        // Remove up to 0-3 leading whitespaces.
+        // If the line has 4 or more whitespaces it is not a heading according to commonmark spec.
+        let heading_line = &trim_leading_whitespace(raw_line, 3);
+        if curr_fence.is_none() && heading_line.starts_with('#') {
+            let heading = handle_heading(heading_line, levels);
+            result.push_str(&heading);
+        } else {
+            result.push_str(raw_line);
         }
     }
+    result
+}
+
+/// Removes leading whitespaces from code fences if present
+/// However maximum of [max] whitespaces are removed.
+/// This is useful for code fences may have leading whitespaces (0-3).
+fn trim_leading_whitespace(input: &str, max: usize) -> String {
+    let mut count = 0;
+    input
+        .trim_start_matches(|c: char| {
+            if c.is_whitespace() && count < max {
+                count += 1;
+                true
+            } else {
+                false
+            }
+        })
+        .to_string()
+}
+/// A function that returns the count of a code fence line.
+/// Param [allow_info] allows to keep info strings in code fences.
+/// Ending fences cannot have info strings
+pub fn get_fence(line: &str, allow_info: bool) -> Option<(usize, char)> {
+    let mut chars = line.chars();
+    if let Some(first_char) = chars.next() {
+        if first_char == '`' || first_char == '~' {
+            let mut count = 1;
+            for ch in chars {
+                if ch == first_char {
+                    // count the number of repeated code fence characters
+                    count += 1;
+                } else {
+                    if !allow_info && ch != '\n' {
+                        // info string is not allowed this is not a code fence
+                        return None;
+                    }
+                    return Some((count, first_char));
+                }
+            }
+            return Some((count, first_char));
+        }
+    }
+    None
+}
+// Dumb heading parser.
+pub fn handle_heading(line: &str, levels: usize) -> String {
+    let chars = line.chars();
+
+    let mut hashes = String::new();
+    let mut rest = String::new();
+    for char in chars {
+        match char {
+            '#' if rest.is_empty() => {
+                // only collect hashes if no other tokens
+                hashes.push(char)
+            }
+            _ => rest.push(char),
+        }
+    }
+    let new_hashes = match hashes.len() + levels {
+        // We reached the maximum heading size.
+        6.. => "#".repeat(6),
+        _ => "#".repeat(hashes.len() + levels),
+    };
+
+    format!("{new_hashes}{rest}")
 }

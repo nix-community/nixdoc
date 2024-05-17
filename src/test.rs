@@ -151,6 +151,15 @@ fn test_doc_comment() {
 }
 
 #[test]
+fn test_commonmark() {
+    let src = fs::read_to_string("test/commonmark.md").unwrap();
+
+    let output = shift_headings(&src, 0);
+
+    insta::assert_snapshot!(output);
+}
+
+#[test]
 fn test_headings() {
     let src = fs::read_to_string("test/headings.md").unwrap();
 

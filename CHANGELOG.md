@@ -1,5 +1,13 @@
 # Changelog
 
+## Version 3.0.5
+
+Fixes: incompatibility with nixpkgs in 3.0.3 and 3.0.4
+
+by @hsjobeki;
+
+in https://github.com/nix-community/nixdoc/pull/121.
+
 ## Version 3.0.4
 
 Fixes: issue with headings ids introduced with 3.0.3
