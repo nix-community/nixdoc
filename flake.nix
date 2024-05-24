@@ -24,7 +24,6 @@
     in
     {
       recipes.default = recipe;
-      recipes.nixdoc = recipe;
     }
     //
     flake-utils.lib.eachDefaultSystem (system:
