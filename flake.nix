@@ -10,6 +10,22 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   };
   outputs = { self, nixpkgs, flake-utils, ... }:
+    let
+      recipe = { lib, rustPlatform }:
+        let
+          package = (lib.importTOML ./Cargo.toml).package;
+        in
+        rustPlatform.buildRustPackage {
+          pname = package.name;
+          version = package.version;
+          src = ./.;
+          cargoLock.lockFile = ./Cargo.lock;
+        };
+    in
+    {
+      recipes.default = recipe;
+    }
+    //
     flake-utils.lib.eachDefaultSystem (system:
       let
         nixpkgsDocs = import "${nixpkgs}/doc" { 
@@ -21,21 +37,12 @@
           }; 
         };
         pkgs = nixpkgs.legacyPackages.${system};
-        package = (pkgs.lib.importTOML ./Cargo.toml).package;
       in
       {
-        packages.default = pkgs.rustPlatform.buildRustPackage {
-          pname = package.name;
-          version = package.version;
-          src = ./.;
-          cargoLock = {
-            lockFile = ./Cargo.lock;
-          };
-        };
-
+        packages.default = pkgs.callPackage recipe { };
         apps.default = flake-utils.lib.mkApp {
           drv = self.packages.${system}.default;
-          name = package.name;
+          name = self.packages.${system}.default.pname;
         };
 
         checks = {

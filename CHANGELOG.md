@@ -1,5 +1,16 @@
 # Changelog
 
+## Version 3.0.6
+
+Exposes the package recipe under `recipes.default` so it can easily be re-used.
+Example:
+
+```
+nix-repl> :l https://github.com/nixos/nixpkgs/tarball/nixpkgs-unstable
+nix-repl> :l https://github.com/nix-community/nixdoc/tarball/master
+nix-repl> pkgs.callPackage recipes.default {}
+```
+
 ## Version 3.0.5
 
 Fixes: incompatibility with nixpkgs in 3.0.3 and 3.0.4
