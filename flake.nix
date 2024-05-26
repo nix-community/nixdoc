@@ -28,6 +28,14 @@
     //
     flake-utils.lib.eachDefaultSystem (system:
       let
+        nixpkgsDocs = import "${nixpkgs}/doc" { 
+          pkgs = import nixpkgs {
+            inherit system;
+            overlays = [ 
+              (_: _: { nixdoc = self.packages.${system}.default; } )
+            ];
+          }; 
+        };
         pkgs = nixpkgs.legacyPackages.${system};
       in
       {
@@ -38,6 +46,7 @@
         };
 
         checks = {
+          inherit nixpkgsDocs;
           test = self.packages.${system}.default.overrideAttrs (drvAttrs: {
             postCheck = drvAttrs.postCheck or "" + ''
               ${pkgs.rustfmt}/bin/rustfmt --check src/**.rs

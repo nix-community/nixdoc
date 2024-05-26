@@ -1,0 +1,150 @@
+# Heading 1
+
+This Markdown includes a variety of elements that you might find in a document parsed to an AST by a Markdown parser following the CommonMark specification. 
+Feel free to modify or expand upon it based on your specific needs or to explore additional Markdown features.
+
+## Heading 2
+
+### Heading 3
+
+#### Heading 4
+
+##### Heading 5
+
+This is a paragraph with some **bold text** and _italic text_.
+
+> This is a blockquote.
+
+- This is
+- an unordered
+- list
+
+1. This is
+2. an ordered
+3. list
+
+`Inline code` spans are also supported.
+
+```bash {#example .class}
+# This is a code block
+echo "Hello, Markdown!"
+```
+
+Here is a horizontal rule:
+
+---
+
+### Links and Images
+
+[This is a link](https://example.com)
+
+![This is an image](https://example.com/image.png "Image Title")
+
+### Tables
+
+| Syntax    | Description |
+| --------- | ----------- |
+| Header    | Title       |
+| Paragraph | Text        |
+
+### Footnotes
+
+Here is a text with a footnote[^1].
+
+[^1]: This is the footnote.
+
+### Inline HTML
+
+<b>This is bold text using HTML</b>
+
+<div style="color: red;">
+  This is a div with red text.
+</div>
+
+### Task list
+
+- [x] This is a completed task
+- [ ] This is an uncompleted task
+
+### Markdown-it-py extensions
+
+### Fenced div with attributes
+
+::: {#customDiv .customStyle key="value"}
+This is a Pandoc-style fenced div with attributes.
+:::
+
+:::{#ex-makeScope .example}
+#### Create an interdependent package set on top of `pkgs`
+
+The functions in `foo.nix` and `bar.nix` can depend on each other, in the sense that `foo.nix` can contain a function that expects `bar` as an attribute in its argument.
+
+```nix
+let
+    pkgs = import <nixpkgs> { };
+in
+pkgs.lib.makeScope pkgs.newScope (self: {
+    foo = self.callPackage ./foo.nix { };
+    bar = self.callPackage ./bar.nix { };
+})
+```
+
+evaluates to
+
+```nix
+{
+    callPackage = «lambda»;
+    newScope = «lambda»;
+    overrideScope = «lambda»;
+    packages = «lambda»;
+    foo = «derivation»;
+    bar = «derivation»;
+}
+```
+:::
+
+### Heading anchors
+
+#### Simple {#some-id}
+
+#### With attributes {#some-other-id .customClass style="color:blue;"}
+
+This heading includes both an anchor and CSS attributes.
+
+### Definition List
+
+Term 1
+:   Definition 1
+
+Term 2
+:   Definition 2 with a **bold** aspect.
+
+Parent Term
+:   Parent Definition
+
+    Nested Term 1
+    :   Nested Definition 1
+
+    Nested Term 2
+    :   Nested Definition 2
+
+::: {.important}
+**Note:**
+:   This is an important note inside a custom styled div.
+:::
+
+### Codeblocks
+
+```python
+# This is a Python code example
+def hello_world():
+    print("Hello, world!")
+```
+
+Codeblock with  attributes
+
+    ```python {#codeExample .highlighted style="background-color: #f0f0f0;"}
+    # This is a Python code example
+    def hello_world():
+        print("Hello, world!")
+    ```

@@ -18,20 +18,14 @@ nixdoc comment
 
 Doc-comment
 
-
-
 ## `lib.debug.multiple` {#function-library-lib.debug.multiple}
 
 Doc-comment
 
-
-
 ## `lib.debug.argumentTest` {#function-library-lib.debug.argumentTest}
 
-Doc-comment before the lamdba causes the whole
+Doc-comment before the lamdba causes the whole 
 lambda including its arguments to switch to doc-comments ONLY rendering
-
-
 
 ## `lib.debug.legacyArgumentTest` {#function-library-lib.debug.legacyArgumentTest}
 
