@@ -1,5 +1,17 @@
 # Changelog
 
+## Version 3.0.7
+
+Add support for empty prefix flags.
+Allows for improved generic usage in nixpkgs/lib and other projects.
+
+Empty prefix is now possible.
+Issue: https://github.com/nix-community/nixdoc/issues/119 by @roberth
+
+by @hsjobeki;
+
+in https://github.com/nix-community/nixdoc/pull/122.
+
 ## Version 3.0.6
 
 Exposes the package recipe under `recipes.default` so it can easily be re-used.

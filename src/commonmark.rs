@@ -127,20 +127,35 @@ pub struct ManualEntry {
 }
 
 impl ManualEntry {
+    /// Generate the identifier and title for CommonMark.
+    /// title is the human-readable name of the function.
+    /// ident is used as URL Encoded link to the function and has thus stricter rules (i.e. "' " in "lib.map' "  is not allowed).
+    pub(crate) fn get_ident_title(&self) -> (String, String) {
+        let name_prime = self.name.replace('\'', "-prime");
+
+        let ident = vec![&self.prefix, &self.category, &name_prime]
+            .into_iter()
+            .filter(|x| !x.is_empty())
+            .cloned()
+            .collect::<Vec<String>>()
+            .join(".");
+
+        let title = vec![&self.prefix, &self.category, &self.name]
+            .into_iter()
+            .filter(|x| !x.is_empty())
+            .cloned()
+            .collect::<Vec<String>>()
+            .join(".");
+
+        (ident, title)
+    }
     /// Write a single CommonMark entry for a documented Nix function.
     pub fn write_section<W: Write>(
         self,
         locs: &HashMap<String, String>,
         writer: &mut W,
     ) -> Result<()> {
-        let title = format!("{}.{}.{}", self.prefix, self.category, self.name);
-        let ident = format!(
-            "{}.{}.{}",
-            self.prefix,
-            self.category,
-            self.name.replace('\'', "-prime")
-        );
-
+        let (ident, title) = self.get_ident_title();
         writeln!(writer, "## `{}` {{#function-library-{}}}\n", title, ident)?;
 
         // <subtitle> (type signature)

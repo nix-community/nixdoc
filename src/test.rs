@@ -3,7 +3,7 @@ use std::fs;
 
 use std::io::Write;
 
-use crate::{collect_entries, format::shift_headings, retrieve_description};
+use crate::{collect_entries, format::shift_headings, retrieve_description, ManualEntry};
 
 #[test]
 fn test_main() {
@@ -208,4 +208,22 @@ fn test_doc_comment_no_duplicate_arguments() {
     let output = String::from_utf8(output).expect("not utf8");
 
     insta::assert_snapshot!(output);
+}
+
+#[test]
+fn test_empty_prefix() {
+    let test_entry = ManualEntry {
+        args: vec![],
+        category: "test".to_string(),
+        description: vec![],
+        example: None,
+        fn_type: None,
+        name: "mapSimple'".to_string(),
+        prefix: "".to_string(),
+    };
+
+    let (ident, title) = test_entry.get_ident_title();
+
+    assert_eq!(ident, "test.mapSimple-prime");
+    assert_eq!(title, "test.mapSimple'");
 }
