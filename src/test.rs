@@ -1,4 +1,5 @@
 use rnix;
+use std::collections::HashMap;
 use std::fs;
 
 use std::io::Write;
@@ -9,7 +10,8 @@ use crate::{collect_entries, format::shift_headings, retrieve_description, Manua
 fn test_main() {
     let mut output = Vec::new();
     let src = fs::read_to_string("test/strings.nix").unwrap();
-    let locs = serde_json::from_str(&fs::read_to_string("test/strings.json").unwrap()).unwrap();
+    let locs: HashMap<String, String> =
+        serde_json::from_str(&fs::read_to_string("test/strings.json").unwrap()).unwrap();
     let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
     let desc = "string manipulation functions";
     let prefix = "lib";
@@ -23,9 +25,9 @@ fn test_main() {
     )
     .expect("Failed to write header");
 
-    for entry in collect_entries(nix, prefix, category) {
+    for entry in collect_entries(nix, prefix, category, &locs) {
         entry
-            .write_section(&locs, &mut output)
+            .write_section(&mut output)
             .expect("Failed to write section")
     }
 
@@ -44,9 +46,9 @@ fn test_description_of_lib_debug() {
     let desc = retrieve_description(&nix, &"Debug", category);
     writeln!(output, "{}", desc).expect("Failed to write header");
 
-    for entry in collect_entries(nix, prefix, category) {
+    for entry in collect_entries(nix, prefix, category, &Default::default()) {
         entry
-            .write_section(&Default::default(), &mut output)
+            .write_section(&mut output)
             .expect("Failed to write section")
     }
 
@@ -63,9 +65,9 @@ fn test_arg_formatting() {
     let prefix = "lib";
     let category = "options";
 
-    for entry in collect_entries(nix, prefix, category) {
+    for entry in collect_entries(nix, prefix, category, &Default::default()) {
         entry
-            .write_section(&Default::default(), &mut output)
+            .write_section(&mut output)
             .expect("Failed to write section")
     }
 
@@ -82,9 +84,9 @@ fn test_inherited_exports() {
     let prefix = "lib";
     let category = "let";
 
-    for entry in collect_entries(nix, prefix, category) {
+    for entry in collect_entries(nix, prefix, category, &Default::default()) {
         entry
-            .write_section(&Default::default(), &mut output)
+            .write_section(&mut output)
             .expect("Failed to write section")
     }
 
@@ -101,9 +103,9 @@ fn test_line_comments() {
     let prefix = "lib";
     let category = "let";
 
-    for entry in collect_entries(nix, prefix, category) {
+    for entry in collect_entries(nix, prefix, category, &Default::default()) {
         entry
-            .write_section(&Default::default(), &mut output)
+            .write_section(&mut output)
             .expect("Failed to write section")
     }
 
@@ -120,9 +122,9 @@ fn test_multi_line() {
     let prefix = "lib";
     let category = "let";
 
-    for entry in collect_entries(nix, prefix, category) {
+    for entry in collect_entries(nix, prefix, category, &Default::default()) {
         entry
-            .write_section(&Default::default(), &mut output)
+            .write_section(&mut output)
             .expect("Failed to write section")
     }
 
@@ -139,9 +141,9 @@ fn test_doc_comment() {
     let prefix = "lib";
     let category = "debug";
 
-    for entry in collect_entries(nix, prefix, category) {
+    for entry in collect_entries(nix, prefix, category, &Default::default()) {
         entry
-            .write_section(&Default::default(), &mut output)
+            .write_section(&mut output)
             .expect("Failed to write section")
     }
 
@@ -178,9 +180,9 @@ fn test_doc_comment_section_description() {
     let desc = retrieve_description(&nix, &"Debug", category);
     writeln!(output, "{}", desc).expect("Failed to write header");
 
-    for entry in collect_entries(nix, prefix, category) {
+    for entry in collect_entries(nix, prefix, category, &Default::default()) {
         entry
-            .write_section(&Default::default(), &mut output)
+            .write_section(&mut output)
             .expect("Failed to write section")
     }
 
@@ -199,9 +201,9 @@ fn test_doc_comment_no_duplicate_arguments() {
     let desc = retrieve_description(&nix, &"Debug", category);
     writeln!(output, "{}", desc).expect("Failed to write header");
 
-    for entry in collect_entries(nix, prefix, category) {
+    for entry in collect_entries(nix, prefix, category, &Default::default()) {
         entry
-            .write_section(&Default::default(), &mut output)
+            .write_section(&mut output)
             .expect("Failed to write section")
     }
 
@@ -215,6 +217,7 @@ fn test_empty_prefix() {
     let test_entry = ManualEntry {
         args: vec![],
         category: "test".to_string(),
+        location: None,
         description: vec![],
         example: None,
         fn_type: None,

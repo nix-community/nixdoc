@@ -41,6 +41,7 @@ use rnix::{
 use rowan::{ast::AstNode, WalkEvent};
 use std::fs;
 
+use serde::Serialize;
 use std::collections::HashMap;
 use std::io;
 use std::io::Write;
@@ -55,6 +56,10 @@ struct Options {
     /// Prefix for the category (e.g. 'lib' or 'utils').
     #[arg(short, long, default_value_t = String::from("lib"))]
     prefix: String,
+
+    /// Whether to output JSON.
+    #[arg(short, long, default_value_t = false)]
+    json_output: bool,
 
     /// Name of the function category (e.g. 'strings', 'attrsets').
     #[arg(short, long)]
@@ -91,6 +96,12 @@ struct DocComment {
 struct DocItem {
     name: String,
     comment: DocComment,
+}
+
+#[derive(Debug, Serialize)]
+struct JsonFormat {
+    version: u32,
+    entries: Vec<ManualEntry>,
 }
 
 enum DocItemOrLegacy {
@@ -222,6 +233,7 @@ fn collect_bindings(
     node: &SyntaxNode,
     prefix: &str,
     category: &str,
+    locs: &HashMap<String, String>,
     scope: HashMap<String, ManualEntry>,
 ) -> Vec<ManualEntry> {
     for ev in node.preorder() {
@@ -232,7 +244,7 @@ fn collect_bindings(
                     if let Some(apv) = AttrpathValue::cast(child.clone()) {
                         entries.extend(
                             collect_entry_information(apv)
-                                .map(|di| di.into_entry(prefix, category)),
+                                .map(|di| di.into_entry(prefix, category, locs)),
                         );
                     } else if let Some(inh) = Inherit::cast(child) {
                         // `inherit (x) ...` needs much more handling than we can
@@ -259,7 +271,12 @@ fn collect_bindings(
 
 // Main entrypoint for collection
 // TODO: document
-fn collect_entries(root: rnix::Root, prefix: &str, category: &str) -> Vec<ManualEntry> {
+fn collect_entries(
+    root: rnix::Root,
+    prefix: &str,
+    category: &str,
+    locs: &HashMap<String, String>,
+) -> Vec<ManualEntry> {
     // we will look into the top-level let and its body for function docs.
     // we only need a single level of scope for this.
     // since only the body can export a function we don't need to implement
@@ -276,15 +293,16 @@ fn collect_entries(root: rnix::Root, prefix: &str, category: &str) -> Vec<Manual
                     LetIn::cast(n.clone()).unwrap().body().unwrap().syntax(),
                     prefix,
                     category,
+                    locs,
                     n.children()
                         .filter_map(AttrpathValue::cast)
                         .filter_map(collect_entry_information)
-                        .map(|di| (di.name.to_string(), di.into_entry(prefix, category)))
+                        .map(|di| (di.name.to_string(), di.into_entry(prefix, category, locs)))
                         .collect(),
                 );
             }
             WalkEvent::Enter(n) if n.kind() == SyntaxKind::NODE_ATTR_SET => {
-                return collect_bindings(&n, prefix, category, Default::default());
+                return collect_bindings(&n, prefix, category, locs, Default::default());
             }
             _ => (),
         }
@@ -308,7 +326,6 @@ fn retrieve_description(nix: &rnix::Root, description: &str, category: &str) -> 
 }
 
 fn main() {
-    let mut output = io::stdout();
     let opts = Options::parse();
     let src = fs::read_to_string(&opts.file).unwrap();
     let locs = match opts.locs {
@@ -321,12 +338,26 @@ fn main() {
     let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
     let description = retrieve_description(&nix, &opts.description, &opts.category);
 
-    // TODO: move this to commonmark.rs
-    writeln!(output, "{}", description).expect("Failed to write header");
+    let entries = collect_entries(nix, &opts.prefix, &opts.category, &locs);
 
-    for entry in collect_entries(nix, &opts.prefix, &opts.category) {
-        entry
-            .write_section(&locs, &mut output)
-            .expect("Failed to write section")
+    if opts.json_output {
+        let json_string = match serde_json::to_string(&JsonFormat {
+            version: 1,
+            entries,
+        }) {
+            Ok(json) => json,
+            Err(error) => panic!("Problem converting entries to JSON: {error:?}"),
+        };
+        println!("{}", json_string);
+    } else {
+        // TODO: move this to commonmark.rs
+        let mut output = io::stdout();
+        writeln!(output, "{}", description).expect("Failed to write header");
+
+        for entry in entries {
+            entry
+                .write_section(&mut output)
+                .expect("Failed to write section")
+        }
     }
 }
