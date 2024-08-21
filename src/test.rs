@@ -227,3 +227,22 @@ fn test_empty_prefix() {
     assert_eq!(ident, "test.mapSimple-prime");
     assert_eq!(title, "test.mapSimple'");
 }
+
+#[test]
+fn test_patterns() {
+    let mut output = Vec::new();
+    let src = fs::read_to_string("test/patterns.nix").unwrap();
+    let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
+    let prefix = "lib";
+    let category = "debug";
+
+    for entry in collect_entries(nix, prefix, category) {
+        entry
+            .write_section(&Default::default(), &mut output)
+            .expect("Failed to write section")
+    }
+
+    let output = String::from_utf8(output).expect("not utf8");
+
+    insta::assert_snapshot!(output);
+}
