@@ -1,0 +1,7 @@
+---
+source: src/test.rs
+expression: output
+---
+## `lib.debug.iAmTopLevel` {#function-library-lib.debug.iAmTopLevel}
+
+This binding is in the top-level attrset

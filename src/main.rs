@@ -264,8 +264,13 @@ fn collect_entries(root: rnix::Root, prefix: &str, category: &str) -> Vec<Manual
     // we only need a single level of scope for this.
     // since only the body can export a function we don't need to implement
     // mutually recursive resolution.
-    for ev in root.syntax().preorder() {
+    let mut preorder = root.syntax().preorder();
+    while let Some(ev) = preorder.next() {
         match ev {
+            // Skip patterns. See test/patterns.nix for the reason why.
+            WalkEvent::Enter(n) if n.kind() == SyntaxKind::NODE_PATTERN => {
+                preorder.skip_subtree();
+            }
             WalkEvent::Enter(n) if n.kind() == SyntaxKind::NODE_LET_IN => {
                 return collect_bindings(
                     LetIn::cast(n.clone()).unwrap().body().unwrap().syntax(),
