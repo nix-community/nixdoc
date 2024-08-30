@@ -16,13 +16,11 @@
 //! This module implements CommonMark output for a struct
 //! representing a single entry in the manual.
 
-use std::collections::HashMap;
-
-use std::io::{Result, Write};
+use serde::Serialize;
 
 /// Represent a single function argument name and its (optional)
 /// doc-string.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct SingleArg {
     pub name: String,
     pub doc: Option<String>,
@@ -30,7 +28,7 @@ pub struct SingleArg {
 
 /// Represent a function argument, which is either a flat identifier
 /// or a pattern set.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub enum Argument {
     /// Flat function argument (e.g. `n: n * 2`).
     Flat(SingleArg),
@@ -99,16 +97,42 @@ fn handle_indentation(raw: &str) -> String {
     }
 }
 
+/// Generate the identifier for CommonMark.
+/// ident is used as URL Encoded link to the function and has thus stricter rules (i.e. "' " in "lib.map' "  is not allowed).
+pub(crate) fn get_identifier(prefix: &String, category: &String, name: &String) -> String {
+    let name_prime = name.replace('\'', "-prime");
+    vec![prefix, category, &name_prime]
+        .into_iter()
+        .filter(|x| !x.is_empty())
+        .cloned()
+        .collect::<Vec<String>>()
+        .join(".")
+}
+
+/// Generate the title for CommonMark.
+/// the title is the human-readable name of the function.
+pub(crate) fn get_title(prefix: &String, category: &String, name: &String) -> String {
+    vec![prefix, category, name]
+        .into_iter()
+        .filter(|x| !x.is_empty())
+        .cloned()
+        .collect::<Vec<String>>()
+        .join(".")
+}
+
 /// Represents a single manual section describing a library function.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct ManualEntry {
     /// Prefix for the category (e.g. 'lib' or 'utils').
     pub prefix: String,
 
-    /// Name of the function category (e.g. 'strings', 'trivial', 'attrsets')
+    /// Name of the function category (e.g. 'strings', 'trivial', 'attrsets').
     pub category: String,
 
-    /// Name of the section (used as the title)
+    /// Location of the function.
+    pub location: Option<String>,
+
+    /// Name of the section (used as the title).
     pub name: String,
 
     /// Type signature (if provided). This is not actually a checked
@@ -122,61 +146,44 @@ pub struct ManualEntry {
     /// Usage example for the entry.
     pub example: Option<String>,
 
-    /// Arguments of the function
+    /// Arguments of the function.
     pub args: Vec<Argument>,
 }
 
 impl ManualEntry {
-    /// Generate the identifier and title for CommonMark.
-    /// title is the human-readable name of the function.
-    /// ident is used as URL Encoded link to the function and has thus stricter rules (i.e. "' " in "lib.map' "  is not allowed).
     pub(crate) fn get_ident_title(&self) -> (String, String) {
-        let name_prime = self.name.replace('\'', "-prime");
-
-        let ident = vec![&self.prefix, &self.category, &name_prime]
-            .into_iter()
-            .filter(|x| !x.is_empty())
-            .cloned()
-            .collect::<Vec<String>>()
-            .join(".");
-
-        let title = vec![&self.prefix, &self.category, &self.name]
-            .into_iter()
-            .filter(|x| !x.is_empty())
-            .cloned()
-            .collect::<Vec<String>>()
-            .join(".");
-
+        let ident = get_identifier(&self.prefix, &self.category, &self.name);
+        let title = get_title(&self.prefix, &self.category, &self.name);
         (ident, title)
     }
+
     /// Write a single CommonMark entry for a documented Nix function.
-    pub fn write_section<W: Write>(
-        self,
-        locs: &HashMap<String, String>,
-        writer: &mut W,
-    ) -> Result<()> {
+    pub fn write_section(self, output: &mut String) -> String {
         let (ident, title) = self.get_ident_title();
-        writeln!(writer, "## `{}` {{#function-library-{}}}\n", title, ident)?;
+        output.push_str(&format!(
+            "## `{}` {{#function-library-{}}}\n\n",
+            title, ident
+        ));
 
         // <subtitle> (type signature)
         if let Some(t) = &self.fn_type {
             if t.lines().count() > 1 {
-                writeln!(writer, "**Type**:\n```\n{}\n```\n", t)?;
+                output.push_str(&format!("**Type**:\n```\n{}\n```\n\n", t));
             } else {
-                writeln!(writer, "**Type**: `{}`\n", t)?;
+                output.push_str(&format!("**Type**: `{}`\n\n", t));
             }
         }
 
         // Primary doc string
         // TODO: Split paragraphs?
         for paragraph in &self.description {
-            writeln!(writer, "{}\n", paragraph)?;
+            output.push_str(&format!("{}\n\n", paragraph));
         }
 
         // Function argument names
         if !self.args.is_empty() {
             for arg in self.args {
-                writeln!(writer, "{}", arg.format_argument())?;
+                output.push_str(&format!("{}\n", arg.format_argument()));
             }
         }
 
@@ -185,19 +192,18 @@ impl ManualEntry {
         // TODO: In grhmc's version there are multiple (named)
         // examples, how can this be achieved automatically?
         if let Some(example) = &self.example {
-            writeln!(
-                writer,
-                "::: {{.example #function-library-example-{}}}",
+            output.push_str(&format!(
+                "::: {{.example #function-library-example-{}}}\n",
                 ident
-            )?;
-            writeln!(writer, "# `{}` usage example\n", title)?;
-            writeln!(writer, "```nix\n{}\n```\n:::\n", example.trim())?;
+            ));
+            output.push_str(&format!("# `{}` usage example\n\n", title));
+            output.push_str(&format!("```nix\n{}\n```\n:::\n\n", example.trim()));
         }
 
-        if let Some(loc) = locs.get(&ident) {
-            writeln!(writer, "Located at {loc}.\n")?;
+        if let Some(loc) = self.location {
+            output.push_str(&String::from(format!("Located at {loc}.\n\n")));
         }
 
-        Ok(())
+        output.to_string()
     }
 }

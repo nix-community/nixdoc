@@ -3,11 +3,12 @@ use rnix::{
     SyntaxKind, SyntaxNode,
 };
 use rowan::ast::AstNode;
+use std::collections::HashMap;
 
 use crate::{
     commonmark::{Argument, ManualEntry, SingleArg},
     format::handle_indentation,
-    retrieve_doc_comment, DocComment,
+    get_identifier, retrieve_doc_comment, DocComment,
 };
 
 #[derive(Debug)]
@@ -18,10 +19,22 @@ pub struct LegacyDocItem {
 }
 
 impl LegacyDocItem {
-    pub fn into_entry(self, prefix: &str, category: &str) -> ManualEntry {
+    pub fn into_entry(
+        self,
+        prefix: &str,
+        category: &str,
+        locs: &HashMap<String, String>,
+    ) -> ManualEntry {
+        let ident = get_identifier(
+            &prefix.to_string(),
+            &category.to_string(),
+            &self.name.to_string(),
+        );
+
         ManualEntry {
             prefix: prefix.to_string(),
             category: category.to_string(),
+            location: locs.get(&ident).cloned(),
             name: self.name,
             description: self
                 .comment
