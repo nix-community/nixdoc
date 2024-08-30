@@ -1,8 +1,10 @@
 ---
-source: src/main.rs
+source: src/test.rs
+assertion_line: 23
 expression: output
 ---
 # string manipulation functions {#sec-functions-library-strings}
+String manipulation functions.
 
 ## `lib.strings.concatStrings` {#function-library-lib.strings.concatStrings}
 
@@ -1693,5 +1695,3 @@ levenshteinAtMost 3 "This is a sentence" "this is a sentense."
 :::
 
 Located at [lib/strings.nix:1183](https://github.com/NixOS/nixpkgs/blob/580dd2124db98c13c3798af23c2ecf6277ec7d9e/lib/strings.nix#L1183) in `<nixpkgs>`.
-
-

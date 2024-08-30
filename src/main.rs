@@ -43,8 +43,6 @@ use std::fs;
 
 use serde::Serialize;
 use std::collections::HashMap;
-use std::io;
-use std::io::Write;
 
 use clap::Parser;
 use std::path::PathBuf;
@@ -325,8 +323,7 @@ fn retrieve_description(nix: &rnix::Root, description: &str, category: &str) -> 
     )
 }
 
-fn main() {
-    let opts = Options::parse();
+fn main_with_options(opts: Options) -> String {
     let src = fs::read_to_string(&opts.file).unwrap();
     let locs = match opts.locs {
         None => Default::default(),
@@ -348,16 +345,20 @@ fn main() {
             Ok(json) => json,
             Err(error) => panic!("Problem converting entries to JSON: {error:?}"),
         };
-        println!("{}", json_string);
+        json_string
     } else {
         // TODO: move this to commonmark.rs
-        let mut output = io::stdout();
-        writeln!(output, "{}", description).expect("Failed to write header");
+        let mut output = description + "\n";
 
         for entry in entries {
-            entry
-                .write_section(&mut output)
-                .expect("Failed to write section")
+            entry.write_section(&mut output);
         }
+        output
     }
+}
+
+fn main() {
+    let opts = Options::parse();
+    let output = main_with_options(opts);
+    println!("{}", output)
 }

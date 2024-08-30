@@ -16,8 +16,6 @@
 //! This module implements CommonMark output for a struct
 //! representing a single entry in the manual.
 
-use std::io::{Result, Write};
-
 use serde::Serialize;
 
 /// Represent a single function argument name and its (optional)
@@ -160,29 +158,32 @@ impl ManualEntry {
     }
 
     /// Write a single CommonMark entry for a documented Nix function.
-    pub fn write_section<W: Write>(self, writer: &mut W) -> Result<()> {
+    pub fn write_section(self, output: &mut String) -> String {
         let (ident, title) = self.get_ident_title();
-        writeln!(writer, "## `{}` {{#function-library-{}}}\n", title, ident)?;
+        output.push_str(&format!(
+            "## `{}` {{#function-library-{}}}\n\n",
+            title, ident
+        ));
 
         // <subtitle> (type signature)
         if let Some(t) = &self.fn_type {
             if t.lines().count() > 1 {
-                writeln!(writer, "**Type**:\n```\n{}\n```\n", t)?;
+                output.push_str(&format!("**Type**:\n```\n{}\n```\n\n", t));
             } else {
-                writeln!(writer, "**Type**: `{}`\n", t)?;
+                output.push_str(&format!("**Type**: `{}`\n\n", t));
             }
         }
 
         // Primary doc string
         // TODO: Split paragraphs?
         for paragraph in &self.description {
-            writeln!(writer, "{}\n", paragraph)?;
+            output.push_str(&format!("{}\n\n", paragraph));
         }
 
         // Function argument names
         if !self.args.is_empty() {
             for arg in self.args {
-                writeln!(writer, "{}", arg.format_argument())?;
+                output.push_str(&format!("{}\n", arg.format_argument()));
             }
         }
 
@@ -191,19 +192,18 @@ impl ManualEntry {
         // TODO: In grhmc's version there are multiple (named)
         // examples, how can this be achieved automatically?
         if let Some(example) = &self.example {
-            writeln!(
-                writer,
-                "::: {{.example #function-library-example-{}}}",
+            output.push_str(&format!(
+                "::: {{.example #function-library-example-{}}}\n",
                 ident
-            )?;
-            writeln!(writer, "# `{}` usage example\n", title)?;
-            writeln!(writer, "```nix\n{}\n```\n:::\n", example.trim())?;
+            ));
+            output.push_str(&format!("# `{}` usage example\n\n", title));
+            output.push_str(&format!("```nix\n{}\n```\n:::\n\n", example.trim()));
         }
 
         if let Some(loc) = self.location {
-            writeln!(writer, "Located at {loc}.\n")?;
+            output.push_str(&String::from(format!("Located at {loc}.\n\n")));
         }
 
-        Ok(())
+        output.to_string()
     }
 }
