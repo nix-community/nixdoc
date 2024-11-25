@@ -7,7 +7,7 @@ description = "Generate CommonMark from Nix library functions"
 
 [dependencies]
 rnix = "0.11"
-rowan = "0.15.11"
+rowan = "0.16.1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 textwrap = "0.16"
