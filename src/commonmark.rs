@@ -158,11 +158,17 @@ impl ManualEntry {
     }
 
     /// Write a single CommonMark entry for a documented Nix function.
-    pub fn write_section(self, output: &mut String) -> String {
+    ///
+    /// # Arguments
+    ///
+    /// - `anchor_prefix`: The prefix to use for the anchor links.
+    ///   In Nixpkgs this would be "function-library-".
+    /// - `output`: The output string to append the CommonMark onto.
+    pub fn write_section(self, anchor_prefix: &str, output: &mut String) -> String {
         let (ident, title) = self.get_ident_title();
         output.push_str(&format!(
-            "## `{}` {{#function-library-{}}}\n\n",
-            title, ident
+            "## `{}` {{#{}{}}}\n\n",
+            title, anchor_prefix, ident
         ));
 
         // <subtitle> (type signature)
@@ -193,8 +199,8 @@ impl ManualEntry {
         // examples, how can this be achieved automatically?
         if let Some(example) = &self.example {
             output.push_str(&format!(
-                "::: {{.example #function-library-example-{}}}\n",
-                ident
+                "::: {{.example #{}example-{}}}\n",
+                anchor_prefix, ident
             ));
             output.push_str(&format!("# `{}` usage example\n\n", title));
             output.push_str(&format!("```nix\n{}\n```\n:::\n\n", example.trim()));

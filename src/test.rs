@@ -11,6 +11,7 @@ use crate::{
 fn test_main() {
     let options = Options {
         prefix: String::from("lib"),
+        anchor_prefix: String::from("function-library-"),
         json_output: false,
         category: String::from("strings"),
         description: String::from("string manipulation functions"),
@@ -24,9 +25,27 @@ fn test_main() {
 }
 
 #[test]
+fn test_main_minimal() {
+    let options = Options {
+        prefix: String::from(""),
+        anchor_prefix: String::from(""),
+        json_output: false,
+        category: String::from(""),
+        description: String::from(""),
+        file: PathBuf::from("test/strings.nix"),
+        locs: Some(PathBuf::from("test/strings.json")),
+    };
+
+    let output = main_with_options(options);
+
+    insta::assert_snapshot!(output);
+}
+
+#[test]
 fn test_json_output() {
     let options = Options {
         prefix: String::from("lib"),
+        anchor_prefix: String::from("function-library-"),
         json_output: true,
         category: String::from("strings"),
         description: String::from("string manipulation functions"),
@@ -49,7 +68,7 @@ fn test_description_of_lib_debug() {
     let mut output = String::from(desc) + "\n";
 
     for entry in collect_entries(nix, prefix, category, &Default::default()) {
-        entry.write_section(&mut output);
+        entry.write_section("function-library-", &mut output);
     }
 
     insta::assert_snapshot!(output);
@@ -64,7 +83,7 @@ fn test_arg_formatting() {
     let category = "options";
 
     for entry in collect_entries(nix, prefix, category, &Default::default()) {
-        entry.write_section(&mut output);
+        entry.write_section("function-library-", &mut output);
     }
 
     insta::assert_snapshot!(output);
@@ -79,7 +98,7 @@ fn test_inherited_exports() {
     let category = "let";
 
     for entry in collect_entries(nix, prefix, category, &Default::default()) {
-        entry.write_section(&mut output);
+        entry.write_section("function-library-", &mut output);
     }
 
     insta::assert_snapshot!(output);
@@ -94,7 +113,7 @@ fn test_line_comments() {
     let category = "let";
 
     for entry in collect_entries(nix, prefix, category, &Default::default()) {
-        entry.write_section(&mut output);
+        entry.write_section("function-library-", &mut output);
     }
 
     insta::assert_snapshot!(output);
@@ -109,7 +128,7 @@ fn test_multi_line() {
     let category = "let";
 
     for entry in collect_entries(nix, prefix, category, &Default::default()) {
-        entry.write_section(&mut output);
+        entry.write_section("function-library-", &mut output);
     }
 
     insta::assert_snapshot!(output);
@@ -124,7 +143,7 @@ fn test_doc_comment() {
     let category = "debug";
 
     for entry in collect_entries(nix, prefix, category, &Default::default()) {
-        entry.write_section(&mut output);
+        entry.write_section("function-library-", &mut output);
     }
 
     insta::assert_snapshot!(output);
@@ -158,7 +177,7 @@ fn test_doc_comment_section_description() {
     let mut output = String::from(desc) + "\n";
 
     for entry in collect_entries(nix, prefix, category, &Default::default()) {
-        entry.write_section(&mut output);
+        entry.write_section("function-library-", &mut output);
     }
 
     insta::assert_snapshot!(output);
@@ -174,7 +193,7 @@ fn test_doc_comment_no_duplicate_arguments() {
     let mut output = String::from(desc) + "\n";
 
     for entry in collect_entries(nix, prefix, category, &Default::default()) {
-        entry.write_section(&mut output);
+        entry.write_section("function-library-", &mut output);
     }
 
     insta::assert_snapshot!(output);
@@ -208,7 +227,7 @@ fn test_patterns() {
     let category = "debug";
 
     for entry in collect_entries(nix, prefix, category, &Default::default()) {
-        entry.write_section(&mut output);
+        entry.write_section("function-library-", &mut output);
     }
 
     insta::assert_snapshot!(output);

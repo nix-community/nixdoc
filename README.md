@@ -60,6 +60,15 @@ The following is an example of markdown documentation for new and current users 
 
 > Note: Within nixpkgs the convention of using [definition-lists](https://www.markdownguide.org/extended-syntax/#definition-lists) for documenting arguments has been established.
 
+## Usage
+
+Refer to `nixdoc --help` for the most up-to-date usage information.
+
+For a minimal format, suitable for inclusion into a dedicated documentation page, use:
+
+```sh
+nixdoc --file lib.nix --category "" --description "" --prefix "" --anchor-prefix "" >lib.md
+```
 
 ## Custom nixdoc format (Legacy)
 
