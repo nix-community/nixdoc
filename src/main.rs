@@ -55,6 +55,9 @@ struct Options {
     #[arg(short, long, default_value_t = String::from("lib"))]
     prefix: String,
 
+    #[arg(long, default_value_t = String::from("function-library-"))]
+    anchor_prefix: String,
+
     /// Whether to output JSON.
     #[arg(short, long, default_value_t = false)]
     json_output: bool,
@@ -310,6 +313,9 @@ fn collect_entries(
 }
 
 fn retrieve_description(nix: &rnix::Root, description: &str, category: &str) -> String {
+    if description.is_empty() && category.is_empty() {
+        return String::new();
+    }
     format!(
         "# {} {{#sec-functions-library-{}}}\n{}\n",
         description,
@@ -351,7 +357,7 @@ fn main_with_options(opts: Options) -> String {
         let mut output = description + "\n";
 
         for entry in entries {
-            entry.write_section(&mut output);
+            entry.write_section(opts.anchor_prefix.as_str(), &mut output);
         }
         output
     }
