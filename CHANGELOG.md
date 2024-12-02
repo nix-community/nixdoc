@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 3.0.8
+
+Add `--json-output`, providing a JSON representation of the documentation.
+
+Fix: attrsets in patterns are now skipped correctly.
+
 ## Version 3.0.7
 
 Add support for empty prefix flags.
