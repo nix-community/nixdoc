@@ -1,5 +1,12 @@
 # Changelog
 
+## Upcoming release
+
+Add `--anchor-prefix` to remove or customize the `function-library-` prefix.
+
+A header won't be rendered when `--description` and `--category` are empty.
+This makes the generated markdown more flexible for inclusion in other documents.
+
 ## Version 3.0.8
 
 Add `--json-output`, providing a JSON representation of the documentation.
