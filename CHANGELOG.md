@@ -2,6 +2,8 @@
 
 ## Upcoming release
 
+## Version 3.1.0
+
 Add `--anchor-prefix` to remove or customize the `function-library-` prefix.
 
 A header won't be rendered when `--description` and `--category` are empty.
