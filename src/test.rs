@@ -232,3 +232,33 @@ fn test_patterns() {
 
     insta::assert_snapshot!(output);
 }
+
+#[test]
+fn test_let_ident() {
+    let mut output = String::from("");
+    let src = fs::read_to_string("test/let-ident.nix").unwrap();
+    let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
+    let prefix = "lib";
+    let category = "math";
+
+    for entry in collect_entries(nix, prefix, category, &Default::default()) {
+        entry.write_section("function-library-", &mut output);
+    }
+
+    insta::assert_snapshot!(output);
+}
+
+#[test]
+fn test_let_ident_chained() {
+    let mut output = String::from("");
+    let src = fs::read_to_string("test/let-ident-chained.nix").unwrap();
+    let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
+    let prefix = "lib";
+    let category = "math";
+
+    for entry in collect_entries(nix, prefix, category, &Default::default()) {
+        entry.write_section("function-library-", &mut output);
+    }
+
+    insta::assert_snapshot!(output);
+}

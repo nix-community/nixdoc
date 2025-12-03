@@ -1,0 +1,18 @@
+---
+source: src/test.rs
+expression: output
+---
+## `lib.math.divide` {#function-library-lib.math.divide}
+
+Divides two numbers.
+
+### Arguments
+
+- a: The dividend
+- b: The divisor
+
+### Type
+
+```
+divide :: Int -> Int -> Int
+```

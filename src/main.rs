@@ -35,7 +35,7 @@ use self::commonmark::*;
 use format::shift_headings;
 use legacy::{collect_lambda_args_legacy, LegacyDocItem};
 use rnix::{
-    ast::{Attr, AttrpathValue, Expr, Inherit, LetIn},
+    ast::{Attr, AttrpathValue, Expr, HasEntry, Ident, Inherit, LetIn},
     SyntaxKind, SyntaxNode,
 };
 use rowan::{ast::AstNode, WalkEvent};
@@ -270,6 +270,37 @@ fn collect_bindings(
     vec![]
 }
 
+/// Given a let-in expression and an identifier name, find the corresponding
+/// AttrpathValue binding in the let block.
+fn find_let_binding(let_in: &LetIn, name: &str) -> Option<AttrpathValue> {
+    for entry in let_in.entries() {
+        if let Some(apv) = AttrpathValue::cast(entry.syntax().clone()) {
+            if let Some(path) = apv.attrpath() {
+                // Check if this binding matches the identifier we're looking for
+                if path.to_string() == name {
+                    return Some(apv);
+                }
+            }
+        }
+    }
+    None
+}
+
+/// Resolve an identifier in the context of a let-in expression.
+/// Returns the syntax node of the value if found, following chains of identifiers.
+fn resolve_let_ident(let_in: &LetIn, ident: &Ident) -> Option<SyntaxNode> {
+    let name = ident.to_string();
+    let apv = find_let_binding(let_in, &name)?;
+    let value = apv.value()?;
+
+    // If the value is itself an identifier, follow the chain
+    if let Expr::Ident(ref inner_ident) = value {
+        resolve_let_ident(let_in, inner_ident)
+    } else {
+        Some(value.syntax().clone())
+    }
+}
+
 // Main entrypoint for collection
 // TODO: document
 fn collect_entries(
@@ -290,17 +321,27 @@ fn collect_entries(
                 preorder.skip_subtree();
             }
             WalkEvent::Enter(n) if n.kind() == SyntaxKind::NODE_LET_IN => {
-                return collect_bindings(
-                    LetIn::cast(n.clone()).unwrap().body().unwrap().syntax(),
-                    prefix,
-                    category,
-                    locs,
-                    n.children()
-                        .filter_map(AttrpathValue::cast)
-                        .filter_map(collect_entry_information)
-                        .map(|di| (di.name.to_string(), di.into_entry(prefix, category, locs)))
-                        .collect(),
-                );
+                let let_in = LetIn::cast(n.clone()).unwrap();
+                let scope: HashMap<String, ManualEntry> = n
+                    .children()
+                    .filter_map(AttrpathValue::cast)
+                    .filter_map(collect_entry_information)
+                    .map(|di| (di.name.to_string(), di.into_entry(prefix, category, locs)))
+                    .collect();
+
+                // Get the body expression
+                let body = let_in.body().unwrap();
+
+                // Check if the body is just an identifier reference
+                if let Expr::Ident(ref ident) = body {
+                    // Try to resolve the identifier to a let binding
+                    if let Some(resolved) = resolve_let_ident(&let_in, ident) {
+                        return collect_bindings(&resolved, prefix, category, locs, scope);
+                    }
+                }
+
+                // Default behavior: look for attrset in the body
+                return collect_bindings(body.syntax(), prefix, category, locs, scope);
             }
             WalkEvent::Enter(n) if n.kind() == SyntaxKind::NODE_ATTR_SET => {
                 return collect_bindings(&n, prefix, category, locs, Default::default());
