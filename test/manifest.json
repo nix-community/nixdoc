@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "groups": [
+    { "id": "stdenv", "description": "the standard build environment" },
+    { "id": "default", "description": "Default functions." }
+  ],
+  "sources": [
+    {
+      "path": "lib.strings",
+      "file": "export-lib-strings.nix",
+      "groups": ["strings"]
+    },
+    {
+      "path": "lib.strings",
+      "file": "export-lib-strings.nix",
+      "groups": ["default"],
+      "include": ["optionalString"]
+    },
+    {
+      "path": "pkgs.stdenv",
+      "file": "make-derivation-lite.nix",
+      "groups": ["stdenv", "builders"],
+      "mode": "deep",
+      "include": ["mkDerivation"]
+    }
+  ]
+}
