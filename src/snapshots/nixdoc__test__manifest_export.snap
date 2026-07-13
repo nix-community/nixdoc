@@ -1,0 +1,71 @@
+---
+source: src/test.rs
+expression: output
+---
+{
+  "schemaVersion": 1,
+  "groups": [
+    {
+      "id": "builders",
+      "description": "Standard environment build helpers."
+    },
+    {
+      "id": "default",
+      "description": "Default functions."
+    },
+    {
+      "id": "stdenv",
+      "description": "the standard build environment"
+    },
+    {
+      "id": "strings",
+      "description": "String manipulation functions."
+    }
+  ],
+  "entries": [
+    {
+      "id": "lib.strings.mapAttrs-prime",
+      "attrPath": "lib.strings.mapAttrs'",
+      "name": "mapAttrs'",
+      "description": "Like `mapAttrs`, but the function additionally receives the position.\n\n# Example\n\n```nix\nmapAttrs' (name: value: nameValuePair name value) { a = 1; }\n```",
+      "groups": [
+        "strings"
+      ],
+      "source": {
+        "file": "export-lib-strings.nix",
+        "line": 39,
+        "column": 3
+      }
+    },
+    {
+      "id": "lib.strings.optionalString",
+      "attrPath": "lib.strings.optionalString",
+      "name": "optionalString",
+      "description": "Depending on the boolean `cond`, return either the given string\nor the empty string. Useful to concatenate against a bigger string.\n\n# Type\n\n```\noptionalString :: bool -> string -> string\n```\n\n# Example\n\n```nix\noptionalString true \"some-string\"\n=> \"some-string\"\n```",
+      "groups": [
+        "default",
+        "strings"
+      ],
+      "source": {
+        "file": "export-lib-strings.nix",
+        "line": 26,
+        "column": 3
+      }
+    },
+    {
+      "id": "pkgs.stdenv.mkDerivation",
+      "attrPath": "pkgs.stdenv.mkDerivation",
+      "name": "mkDerivation",
+      "description": "This function creates a derivation, and returns it in the form of an\nattribute set that both looks like a derivation and can be built.\n\n# Arguments\n\nThe single argument is an attribute set describing the package.\n\n# Example\n\n```nix\nmkDerivation {\n  name = \"hello\";\n  src = ./.;\n}\n```",
+      "groups": [
+        "builders",
+        "stdenv"
+      ],
+      "source": {
+        "file": "make-derivation-lite.nix",
+        "line": 35,
+        "column": 3
+      }
+    }
+  ]
+}

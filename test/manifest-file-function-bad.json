@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "path": "makeDiskImage",
+      "file": "make-disk-image-lite.nix",
+      "mode": "file",
+      "include": ["foo"]
+    }
+  ]
+}

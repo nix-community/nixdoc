@@ -23,6 +23,7 @@
 
 mod comment;
 mod commonmark;
+mod export;
 mod format;
 mod legacy;
 #[cfg(test)]
@@ -63,20 +64,32 @@ struct Options {
     json_output: bool,
 
     /// Name of the function category (e.g. 'strings', 'attrsets').
-    #[arg(short, long)]
-    category: String,
+    #[arg(short, long, required_unless_present = "manifest")]
+    category: Option<String>,
 
     /// Description of the function category.
-    #[arg(short, long)]
-    description: String,
+    #[arg(short, long, required_unless_present = "manifest")]
+    description: Option<String>,
 
     /// Nix file to process.
-    #[arg(short, long)]
-    file: PathBuf,
+    #[arg(short, long, required_unless_present = "manifest")]
+    file: Option<PathBuf>,
 
     /// Path to a file containing location data as JSON.
     #[arg(short, long)]
     locs: Option<PathBuf>,
+
+    /// manifest JSON file; its presence enables RFC-145 export mode.
+    #[arg(long, conflicts_with_all = ["category", "description", "file", "locs", "json_output"])]
+    manifest: Option<PathBuf>,
+
+    /// Where to write the export JSON (export mode only). Defaults to stdout.
+    #[arg(long)]
+    output: Option<PathBuf>,
+
+    /// Base directory for manifest `file` paths (export mode). Default: cwd.
+    #[arg(long)]
+    root: Option<PathBuf>,
 }
 
 #[derive(Debug)]
@@ -330,7 +343,12 @@ fn retrieve_description(nix: &rnix::Root, description: &str, category: &str) -> 
 }
 
 fn main_with_options(opts: Options) -> String {
-    let src = fs::read_to_string(&opts.file).unwrap();
+    let src = fs::read_to_string(
+        opts.file
+            .as_ref()
+            .expect("--file is required without --manifest"),
+    )
+    .unwrap();
     let locs = match opts.locs {
         None => Default::default(),
         Some(p) => fs::read_to_string(p)
@@ -339,9 +357,19 @@ fn main_with_options(opts: Options) -> String {
             .expect("could not read location information"),
     };
     let nix = rnix::Root::parse(&src).ok().expect("failed to parse input");
-    let description = retrieve_description(&nix, &opts.description, &opts.category);
+    let category = opts
+        .category
+        .as_deref()
+        .expect("--category is required without --manifest");
+    let description = retrieve_description(
+        &nix,
+        opts.description
+            .as_deref()
+            .expect("--description is required without --manifest"),
+        category,
+    );
 
-    let entries = collect_entries(nix, &opts.prefix, &opts.category, &locs);
+    let entries = collect_entries(nix, &opts.prefix, category, &locs);
 
     if opts.json_output {
         let json_string = match serde_json::to_string(&JsonFormat {
@@ -365,6 +393,20 @@ fn main_with_options(opts: Options) -> String {
 
 fn main() {
     let opts = Options::parse();
+
+    // Export mode: `--manifest` writes a single codebase-wide JSON artifact.
+    if opts.manifest.is_some() {
+        let output = export::run_export(&opts);
+        match &opts.output {
+            Some(path) => {
+                fs::write(path, output)
+                    .unwrap_or_else(|e| panic!("could not write {}: {e}", path.display()));
+            }
+            None => println!("{}", output),
+        }
+        return;
+    }
+
     let output = main_with_options(opts);
     println!("{}", output)
 }

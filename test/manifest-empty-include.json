@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "sources": [
+    { "path": "pkgs.stdenv", "file": "make-derivation-lite.nix", "include": [] }
+  ]
+}

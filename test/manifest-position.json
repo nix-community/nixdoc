@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "sources": [
+    { "path": "lib", "file": "position.nix", "mode": "deep", "include": ["fun"] }
+  ]
+}

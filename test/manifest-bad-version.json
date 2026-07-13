@@ -1,0 +1,6 @@
+{
+  "version": 2,
+  "sources": [
+    { "path": "lib.strings", "file": "export-lib-strings.nix" }
+  ]
+}
